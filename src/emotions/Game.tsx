@@ -13,7 +13,7 @@ const idealState = Object.keys(NoEmotion).reduce((acc, key) => {
     acc[key] = Math.random() * 80 - 40;
     return acc;
 }, {} as EmotionLevels);
-let levelScale = 25;
+let levelScale = 40;
 let idealVector = [...Object.keys(idealState).map((key) => idealState[key as keyof EmotionLevels] / levelScale)];
 let extroversion = 1;
 
@@ -24,43 +24,75 @@ const Game: Component<{ id: string, width: number, height: number, expressionMod
     scene.camera.updateProjectionMatrix();
 
     let zoom = props.gridSize * 1.25;
+    let lastMousePosition = { x: 0, y: 0 };
 
     let isDragging = false;
     scene.renderer.domElement.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         isDragging = true;
-        console.log('pointerdown');
+        lastMousePosition = { x: e.clientX, y: e.clientY };
     });
-    scene.renderer.domElement.addEventListener('pointerup', (e) => {
+    window.addEventListener('pointerup', (e) => {
         e.preventDefault();
         isDragging = false;
     });
-    scene.renderer.domElement.addEventListener('pointerleave', (e) => {
-        e.preventDefault();
-        isDragging = false;
-    });
-    scene.renderer.domElement.addEventListener('pointercancel', (e) => {
+    window.addEventListener('pointercancel', (e) => {
         e.preventDefault();
         isDragging = false;
     });
     scene.renderer.domElement.addEventListener('pointermove', (e) => {
         e.preventDefault();
         if (isDragging) {
-            scene.camera.position.x -= e.movementX / zoom;
-            scene.camera.position.y += e.movementY / zoom;
+            // Calculate the world-to-screen ratio based on current camera frustum
+            const worldToScreenRatio = (scene.camera.right - scene.camera.left) / scene.renderer.domElement.width;
+            
+            // Calculate world space movement based on screen-to-world ratio
+            const worldSpaceMovementX = -e.movementX * worldToScreenRatio;
+            const worldSpaceMovementY = e.movementY * worldToScreenRatio;
+            
+            scene.camera.position.x += worldSpaceMovementX;
+            scene.camera.position.y += worldSpaceMovementY;
         }
+        lastMousePosition = { x: e.clientX, y: e.clientY };
     });
     scene.renderer.domElement.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const scale = 1 + e.deltaY / 100;
-        zoom /= scale;
-        scene.camera.position.x = scene.camera.position.x * scale;
-        scene.camera.position.y = scene.camera.position.y * scale;
-        scene.camera.top = scene.camera.top * scale;
-        scene.camera.bottom = scene.camera.bottom * scale;
-        scene.camera.left = scene.camera.left * scale;
-        scene.camera.right = scene.camera.right * scale;
+        
+        // Get mouse position in normalized device coordinates (-1 to +1)
+        const rect = scene.renderer.domElement.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        // Create a vector for the mouse position in world space
+        const mouseVector = new THREE.Vector3(mouseX, mouseY, 0);
+        mouseVector.unproject(scene.camera);
+        mouseVector.z = 0; // Project to the z=0 plane
+        
+        // Calculate zoom factor
+        const zoomFactor = e.deltaY > 0 ? 0.95 : 1.05;
+        const newZoom = zoom * zoomFactor;
+        
+        // Calculate the world space position of the mouse before zoom
+        const worldMouseBefore = mouseVector.clone();
+        
+        // Apply zoom to camera frustum
+        scene.camera.top *= zoomFactor;
+        scene.camera.bottom *= zoomFactor;
+        scene.camera.left *= zoomFactor;
+        scene.camera.right *= zoomFactor;
         scene.camera.updateProjectionMatrix();
+        
+        // Calculate the world space position of the mouse after zoom
+        mouseVector.set(mouseX, mouseY, 0);
+        mouseVector.unproject(scene.camera);
+        mouseVector.z = 0;
+        
+        // Adjust camera position to keep the mouse point fixed
+        scene.camera.position.x += worldMouseBefore.x - mouseVector.x;
+        scene.camera.position.y += worldMouseBefore.y - mouseVector.y;
+        
+        // Update zoom variable
+        zoom = newZoom;
     });
     // const pointLight = new THREE.PointLight( 0x224433, 15, 15, .5 );
     // pointLight.position.set( ...([1.25 * (props.gridSize - 1), 2.5 * (props.gridSize - 1), 10]));
@@ -199,52 +231,55 @@ const Game: Component<{ id: string, width: number, height: number, expressionMod
     const [currentEmotionLevels, setCurrentEmotionLevels] = createSignal(idealState);
 
     return (
-      <div id="game-container" style={{position: "relative", "text-align": "center", width: "calc(100% - 2em)", height: "calc(100% - 2em)", padding: "1em", display: "flex", "flex-direction": "row", "align-items": "center", "justify-content": "center"}}>
+      <div id="game-container" style={{position: "relative", "text-align": "center", width: "100%", height: "calc(100% - 2em)", padding: "1em", display: "flex", "flex-direction": "row", "align-items": "center", "justify-content": "center"}}>
         <div id={props.id} class='game' style={{width: props.width + "px", height: props.height + "px", position: "relative"}}>
             {scene.renderer.domElement}
             <div class="halftone"></div>
             <div id="loading">Loading...</div>
         </div>
-        <div id="controls">
-            <h4>Homeostasis</h4>
-            <Face id="face" width={140} height={140} expressionModel={props.expressionModel} emotionLevels={currentEmotionLevels()}/>
-            <For each={Object.keys(NoEmotion)}>
-                {(key) => 
-                    <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
-                        <input type="range" min="-100" max="100" value={idealState[key as keyof EmotionLevels]} oninput={(e) => {
-                            idealState[key as keyof EmotionLevels] = parseInt(e.target.value);
-                            idealVector[Object.keys(NoEmotion).indexOf(key)] = idealState[key as keyof EmotionLevels] / levelScale;
-                            setCurrentEmotionLevels({...idealState});
-                        }}/>
-                        <span>{String(key)}</span>
-                    </div>
-                }
-            </For>
-            <h4>Settings</h4>
-            <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
-                <input type="range" min="-14" max="0" value={Math.log10(learningRate)} oninput={(e) => {
-                    learningRate = 10 **parseInt(e.target.value);
-                }}/>
-                <span>Learning Rate</span>
-            </div>
-            <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
-                <input type="range" min="100" max="10000" value={10100 - updateInterval} oninput={(e) => {
-                    updateInterval = 10100 - parseInt(e.target.value);
-                }}/>
-                <span>Animation Speed</span>
-            </div>
-            <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
-                <input type="range" min="80" max="1000" value={levelScale} oninput={(e) => {
-                    levelScale = parseInt(e.target.value);
-                    idealVector = [...Object.keys(idealState).map((key) => idealState[key as keyof EmotionLevels] / levelScale)];
-                }}/>
-                <span>Intensity</span>
-            </div>
-            <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
-                <input type="range" min="0" max="10" value={extroversion} oninput={(e) => {
-                    extroversion = parseInt(e.target.value);
-                }}/>
-                <span>Extroversion</span>
+        <div style={{display: "flex", "flex-direction": "column", "align-items": "center", "justify-content": "center", "width": "300px" }}>
+            <h1>Games with Emotions</h1>
+            <div id="controls">
+                <h4>Homeostasis</h4>
+                <Face id="face" width={140} height={140} expressionModel={props.expressionModel} emotionLevels={currentEmotionLevels()}/>
+                <For each={Object.keys(NoEmotion)}>
+                    {(key) => 
+                        <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
+                            <input type="range" min="-100" max="100" value={idealState[key as keyof EmotionLevels]} oninput={(e) => {
+                                idealState[key as keyof EmotionLevels] = parseInt(e.target.value);
+                                idealVector[Object.keys(NoEmotion).indexOf(key)] = idealState[key as keyof EmotionLevels] / levelScale;
+                                setCurrentEmotionLevels({...idealState});
+                            }}/>
+                            <span>{String(key)}</span>
+                        </div>
+                    }
+                </For>
+                <h4>Settings</h4>
+                <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
+                    <input type="range" min="-14" max="0" value={Math.log10(learningRate)} oninput={(e) => {
+                        learningRate = 10 **parseInt(e.target.value);
+                    }}/>
+                    <span>Learning Rate</span>
+                </div>
+                <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
+                    <input type="range" min="100" max="10000" value={10100 - updateInterval} oninput={(e) => {
+                        updateInterval = 10100 - parseInt(e.target.value);
+                    }}/>
+                    <span>Animation Speed</span>
+                </div>
+                <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
+                    <input type="range" min="80" max="1000" value={levelScale} oninput={(e) => {
+                        levelScale = parseInt(e.target.value);
+                        idealVector = [...Object.keys(idealState).map((key) => idealState[key as keyof EmotionLevels] / levelScale)];
+                    }}/>
+                    <span>Intensity</span>
+                </div>
+                <div style={{display: "flex", "align-items": "center", gap: "10px"}}>
+                    <input type="range" min="0" max="10" value={extroversion} oninput={(e) => {
+                        extroversion = parseInt(e.target.value);
+                    }}/>
+                    <span>Extroversion</span>
+                </div>
             </div>
         </div>
       </div>

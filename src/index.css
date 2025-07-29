@@ -10,6 +10,14 @@ canvas, img {
     image-rendering: pixelated;
 }
 
+#game-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1em;
+}
+
 .face, .game {
     position: relative;
     overflow: hidden;
@@ -137,4 +145,23 @@ canvas, img {
     -webkit-appearance: none;
     -moz-appearance: none;
     outline: none;
+}
+
+#game-container h1 {
+    position: relative;
+    margin: 0;
+    width: 256px;
+    text-align: center;
+    font-size: 1.5em;
+    color: white;
+    padding: 0.5em;
+    font-weight: bold;
+    /* border: 1px solid black; */
+    background: linear-gradient(to right, #000 0px, #000 1px, transparent 1px, transparent 2px), linear-gradient(to top, #000 0px, #000 1px, transparent 1px, transparent 2px);
+    background-size: 2px 2px;
+    font-family: monospace;
+    margin: -1em auto 1em;
+    
+    text-shadow: -.5px -.5px 0px black, .5px -.5px 0px black, -.5px .5px 0px black, .5px .5px 0px black;
+
 }

@@ -20,7 +20,7 @@ const App: Component = () => {
     surprise: 80,
   }
   let size = 140;
-  let gridSize = 100;
+  let gridSize = 24;
   return (
     <div>
       {/* <table>
@@ -66,7 +66,7 @@ const App: Component = () => {
         <Actor id="actor" width={size} height={size} expressionModel={expressionModel} emotionLevels={randomExpression()}/>
         <Actor id="actor" width={size} height={size} expressionModel={expressionModel} emotionLevels={randomExpression()}/>
       </div> */}
-      <Game id="game" width={Math.min(size*gridSize, window.innerWidth, window.innerHeight)} height={Math.min(size*gridSize, window.innerWidth, window.innerHeight)} expressionModel={expressionModel} gridSize={gridSize}/>
+      <Game id="game" width={Math.min(size*gridSize, window.innerWidth * .95, window.innerHeight * .95)} height={Math.min(size*gridSize, window.innerWidth * .95, window.innerHeight * .95)} expressionModel={expressionModel} gridSize={gridSize}/>
     </div>
   );
 };
