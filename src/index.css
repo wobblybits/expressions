@@ -1,0 +1,140 @@
+@import 'tailwindcss';
+
+#grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0px;
+}
+
+canvas, img {
+    image-rendering: pixelated;
+}
+
+.face, .game {
+    position: relative;
+    overflow: hidden;
+    filter: brightness(.68) blur(0.3px) contrast(3);
+    background: white;
+}
+
+.halftone{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    mix-blend-mode: screen;
+    opacity: .9;
+    pointer-events: none;
+    touch-action: none;
+}
+
+/* adapted from https://leanrada.com/notes/pure-css-halftone/ */
+.halftone:before, .halftone:after {
+    --halftone-size: 3px;
+    --halftone-bleed: 0.41;
+    --halftone-rotation: 360deg;
+    --halftone-dot-size: calc(var(--halftone-size) * var(--halftone-bleed));
+    --halftone-color-dot-size: var(--halftone-dot-size);
+    inset: 0;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-blend-mode: multiply;
+    mix-blend-mode: multiply;
+    background-size: var(--halftone-size) var(--halftone-size);
+    image-rendering: pixelated;
+    pointer-events: none;
+    touch-action: none;
+}
+
+.halftone:after {
+    background-image: radial-gradient(var(--halftone-color-dot-size) at 75% 25%, #f0f, #f6f, #fff), radial-gradient(var(--halftone-color-dot-size) at 25% 75%, #f0f, #f6f, #fff), radial-gradient(var(--halftone-color-dot-size) at 75% 75%, #0ff, #6ff, #fff), radial-gradient(var(--halftone-color-dot-size) at 25% 25%, #0ff, #6ff, #fff);
+    /* transform: rotate(calc(-10deg + var(--halftone-rotation))) translateX(calc(var(--halftone-size) * 0.58)); */
+}
+
+.halftone:before {
+    background-image: radial-gradient(var(--halftone-dot-size) at 25% 75%, #000, #666, #fff), radial-gradient(var(--halftone-color-dot-size) at 75% 25%, #000, #666, #fff), radial-gradient(var(--halftone-color-dot-size) at 25% 25%, #ff0, #ff6, #fff), radial-gradient(var(--halftone-color-dot-size) at 75% 75%, #ff0, #ff6, #fff);
+    /* transform: rotate(calc(10deg + var(--halftone-rotation))) translateX(calc(var(--halftone-size) * 0.58)); */
+}
+
+#loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid black;
+    background: white;
+    padding: 0 1em;
+    box-shadow: -7px 7px 0px gray, -8px 8px 0px black;
+    mix-blend-mode: normal;
+    font-family: monospace;
+}
+
+#controls {
+    /* position: absolute;
+    top: 0;
+    right: 0; */
+    position: relative;
+    margin: auto;
+    padding: 1em;
+    border: 1px solid black;
+    background: white;
+    font-family: monospace;
+}
+
+#controls h4 {
+    text-align: center;
+    text-decoration: underline;
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #000;
+    text-shadow: 0 0 10px #fff;
+}
+
+#controls #face {
+    margin: auto;
+}
+
+#controls:before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: -10px;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, #000 0px, #000 1px, transparent 1px, transparent 2px), linear-gradient(to top, #000 0px, #000 1px, transparent 1px, transparent 2px);
+    background-size: 2px 2px;
+    z-index: -1;
+}
+
+#controls input[type="range"] {
+    width: 100px;
+    height: 10px;
+    background: white;
+    border: 1px solid black;
+    border-radius: 0px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+}
+
+#controls input[type="range"]::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(to right, #000 0px, #000 1px, transparent 1px, transparent 2px), linear-gradient(to top, #000 0px, #000 1px, transparent 1px, transparent 2px);
+    background-size: 2px 2px;
+    background-position: 1px 0, 0 .5px;
+    border: none;
+    border-radius: 0px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+}
