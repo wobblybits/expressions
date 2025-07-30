@@ -14,6 +14,9 @@ importers:
       three:
         specifier: ^0.178.0
         version: 0.178.0
+      transformation-models:
+        specifier: ^1.0.2
+        version: 1.0.2
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.0.7
@@ -740,6 +743,9 @@ packages:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}
     engines: {node: '>=4'}
 
+  transformation-models@1.0.2:
+    resolution: {integrity: sha512-wmgokvIT30B8wTGpabnGejl1ilvkrUUmq1/DiIohqhKh5CHDMSjAl6VI9s8ATgFEPF/qdgRTaMvWVPNAg6wRIg==}
+
   typescript@5.7.2:
     resolution: {integrity: sha512-i5t66RHxDvVN40HfDd1PsEThGNnlMCMT3jMUuoh9/0TaqWevNontacunWyN02LA9/fIbEWlcHZcgTKb9QoaLfg==}
     engines: {node: '>=14.17'}
@@ -1427,6 +1433,8 @@ snapshots:
   three@0.178.0: {}
 
   to-fast-properties@2.0.0: {}
+
+  transformation-models@1.0.2: {}
 
   typescript@5.7.2: {}
 

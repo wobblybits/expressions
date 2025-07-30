@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+body {
+    background: linear-gradient(45deg, transparent 0, transparent calc(50% - 1px), white calc(50% - 1px), white calc(50% + 1px), transparent calc(50% + 1px), transparent 1px, transparent 2px) lightblue;
+    background-size: 4px 8px, 100%;
+}
+
 #grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -8,6 +13,7 @@
 
 canvas, img {
     image-rendering: pixelated;
+    background: white;
 }
 
 #game-container {
@@ -23,6 +29,10 @@ canvas, img {
     overflow: hidden;
     filter: brightness(.68) blur(0.3px) contrast(3);
     background: white;
+}
+
+.game {
+    border: 1px solid black;
 }
 
 .halftone{
@@ -147,7 +157,7 @@ canvas, img {
     outline: none;
 }
 
-#game-container h1 {
+h1 {
     position: relative;
     margin: 0;
     width: 256px;
