@@ -5,7 +5,7 @@ import { NoEmotion, type EmotionLevels } from '../lib/EmotionModel';
 import Scene from '../lib/Scene';
 import { createEffect, createSignal } from 'solid-js';
 
-const Face: Component<{ id: string, width: number, height: number, expressionModel: ExpressionModel, emotionLevels?: EmotionLevels | number[], rotation?: number[] }> = (props) => {
+const Face: Component<{ id: string, width: number, height: number, expressionModel: ExpressionModel, emotionLevels?: EmotionLevels | number[] | (() => EmotionLevels) , rotation?: number[] }> = (props) => {
     const scene = new Scene(props.width, props.height);
     scene.renderer.setPixelRatio(1);
     const expressionModel = props.expressionModel;
@@ -27,7 +27,7 @@ const Face: Component<{ id: string, width: number, height: number, expressionMod
 
     // Use createEffect to react to emotionLevels changes
     createEffect(() => {
-      const emotionLevels = {...NoEmotion, ...props.emotionLevels};
+      const emotionLevels = {...NoEmotion, ...(typeof props.emotionLevels === 'function' ? props.emotionLevels() : props.emotionLevels)};
       draw(emotionLevels);
     });
 

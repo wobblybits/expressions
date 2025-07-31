@@ -20,7 +20,7 @@ let extroversion = 1;
 const Game: Component<{ id: string, width: number, height: number, expressionModel: ExpressionModel, gridSize: number }> = (props) => {
     const scene = new Scene(props.width, props.height);
     scene.camera = new THREE.OrthographicCamera( -2.5 * props.gridSize, 2.5 * props.gridSize, 2.5 * props.gridSize, -2.5 * props.gridSize, 0.01, 100 );
-    scene.camera.position.set( ...([2.5 * Math.min(props.gridSize - 1, 8), 2.5 * Math.max(props.gridSize - 1, 8), 10]) );
+    scene.camera.position.set( ...([2.5 * (props.gridSize - 1), 2.5 * (props.gridSize - 1), 10]) );
     scene.camera.updateProjectionMatrix();
 
     let zoom = props.gridSize * 1.25;
