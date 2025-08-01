@@ -66,16 +66,16 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
         
         // Process frame with automatic staggering
         const frameProcessed = cameraTPS.processFrame(landmarks);
-        if (!frameProcessed) {
-            // Frame was skipped due to timing or no available workers
-            return;
-        }
         
-        // Optional: Log performance stats
-        // const stats = cameraTPS.getPerformanceStats();
-        // if (stats && Math.random() < 0.01) { // Log 1% of the time
-        //     console.log('Performance:', stats);
-        // }
+        // Log detailed performance stats periodically
+        const stats = cameraTPS.getDetailedPerformanceStats();
+        if (Math.random() < 0.01) { // Log 1% of the time
+            console.log('Detailed Performance Stats:', {
+                tpsCalculation: `${stats.tpsCalculation.avg.toFixed(2)}ms (${stats.tpsCalculation.count} samples)`,
+                imageTransformation: `${stats.imageTransformation.avg.toFixed(2)}ms (${stats.imageTransformation.count} samples)`,
+                total: `${(stats.tpsCalculation.avg + stats.imageTransformation.avg).toFixed(2)}ms`
+            });
+        }
     });
 
     let clearSVG = () => {};

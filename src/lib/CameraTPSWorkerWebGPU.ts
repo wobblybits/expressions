@@ -62,17 +62,40 @@ self.onmessage = async (e) => {
                 return;
             }
             
+            const imageTransformationStart = performance.now();
+            
             if (staticData.gpuTPS && staticData.gpuTPS.isSupported()) {
                 await processFrameGPU(data.landmarks);
                 self.postMessage({ type: 'frameProcessed' });
+                
+                // Record image transformation timing only when GPU processing occurs
+                const imageTransformationTime = performance.now() - imageTransformationStart;
+                self.postMessage({
+                    type: 'timing',
+                    data: { imageTransformation: imageTransformationTime }
+                });
             } else if (staticData.sharedArrayBufferSupported) {
                 processFrameDirect(data.landmarks);
                 self.postMessage({ type: 'frameProcessed' });
+                
+                // Record image transformation timing only when processing occurs
+                const imageTransformationTime = performance.now() - imageTransformationStart;
+                self.postMessage({
+                    type: 'timing',
+                    data: { imageTransformation: imageTransformationTime }
+                });
             } else {
                 const newImageData = processFrame(data.landmarks);
                 self.postMessage({
                     type: 'frameProcessed',
                     data: { newImageData }
+                });
+                
+                // Record image transformation timing only when processing occurs
+                const imageTransformationTime = performance.now() - imageTransformationStart;
+                self.postMessage({
+                    type: 'timing',
+                    data: { imageTransformation: imageTransformationTime }
                 });
             }
             break;

@@ -48,17 +48,24 @@ class CameraTPS {
     private scaledWidth: number;
     private scaledHeight: number;
 
+    // Performance tracking properties
+    private performanceTimings: {
+        tpsCalculation: number[];
+        imageTransformation: number[];
+    } = {
+        tpsCalculation: [],
+        imageTransformation: []
+    };
+
     constructor(imageLandmarks: Map<string, number[]>, cameraLandmarks: number[][], workerCount: number = 4) {
         this.workerCount = workerCount;
         this.simdSupported = this.checkSIMDSupport();
         this.useSIMD = this.simdSupported;
         this.sharedArrayBufferSupported = this.checkSharedArrayBufferSupport();
         
-        // Create workers with WebGPU support
+        // Create workers with regular implementation
         for (let i = 0; i < workerCount; i++) {
-            const workerUrl = this.useSIMD ? 
-                new URL('./CameraTPSWorkerWebGPU.ts', import.meta.url) : 
-                new URL('./CameraTPSWorker.ts', import.meta.url);
+            const workerUrl = new URL('./CameraTPSWorker.ts', import.meta.url);
             
             const worker = new Worker(workerUrl, { type: 'module' });
             
@@ -81,9 +88,15 @@ class CameraTPS {
                             const processingTime = performance.now() - startTime;
                             this.workerTimings.push(processingTime);
                             
-                            // Keep only last 10 timings for rolling average
+                            // Record the actual TPS calculation time (worker processing time)
+                            this.performanceTimings.tpsCalculation.push(processingTime);
+                            
+                            // Keep only last 30 timings for rolling average
                             if (this.workerTimings.length > 10) {
                                 this.workerTimings.shift();
+                            }
+                            if (this.performanceTimings.tpsCalculation.length > 30) {
+                                this.performanceTimings.tpsCalculation.shift();
                             }
                             
                             // Adjust frame interval based on average processing time
@@ -99,6 +112,23 @@ class CameraTPS {
                             this.updateCanvasFromSharedBuffer();
                         } else if (data && data.newImageData) {
                             this.writeImageDataToCanvas(data.newImageData);
+                        }
+                        break;
+                        
+                    case 'timing':
+                        if (data) {
+                            if (data.tpsCalculation) {
+                                this.performanceTimings.tpsCalculation.push(data.tpsCalculation);
+                                if (this.performanceTimings.tpsCalculation.length > 30) {
+                                    this.performanceTimings.tpsCalculation.shift();
+                                }
+                            }
+                            if (data.imageTransformation) {
+                                this.performanceTimings.imageTransformation.push(data.imageTransformation);
+                                if (this.performanceTimings.imageTransformation.length > 30) {
+                                    this.performanceTimings.imageTransformation.shift();
+                                }
+                            }
                         }
                         break;
                 }
@@ -264,6 +294,7 @@ class CameraTPS {
         });
 
         this.lastFrameTime = now;
+        
         return true;
     }
 
@@ -378,6 +409,35 @@ class CameraTPS {
             busyWorkers: this.busyWorkers.size,
             queuedFrames: this.frameQueue.length
         };
+    }
+
+    // Add method to get detailed performance stats
+    getDetailedPerformanceStats() {
+        const calculateAverage = (timings: number[]) => {
+            if (timings.length === 0) return 0;
+            return timings.reduce((a, b) => a + b, 0) / timings.length;
+        };
+
+        return {
+            tpsCalculation: {
+                avg: calculateAverage(this.performanceTimings.tpsCalculation),
+                count: this.performanceTimings.tpsCalculation.length
+            },
+            imageTransformation: {
+                avg: calculateAverage(this.performanceTimings.imageTransformation),
+                count: this.performanceTimings.imageTransformation.length
+            }
+        };
+    }
+
+    // Method to record external timing data
+    recordTiming(component: 'imageTransformation', duration: number) {
+        this.performanceTimings[component].push(duration);
+        
+        // Keep only last 30 timings for rolling average
+        if (this.performanceTimings[component].length > 30) {
+            this.performanceTimings[component].shift();
+        }
     }
 
     // Getters for compatibility
