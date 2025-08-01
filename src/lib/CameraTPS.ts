@@ -412,7 +412,7 @@ class CameraTPS {
 
     private checkSIMDSupport(): boolean {
         return typeof WebAssembly !== 'undefined' && 
-               typeof WebAssembly.SIMD !== 'undefined' &&
+               typeof (WebAssembly as any).SIMD !== 'undefined' &&
                crossOriginIsolated;
     }
 
@@ -440,7 +440,7 @@ class CameraTPS {
     getWebGPUInfo(): { supported: boolean; enabled: boolean } {
         return {
             supported: typeof navigator.gpu !== 'undefined',
-            enabled: this.workers.some(w => w.url.includes('WebGPU'))
+            enabled: this.useSIMD // Since we're always using WebGPU workers now
         };
     }
 
