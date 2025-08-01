@@ -1,7 +1,5 @@
 import { NoEmotion, type EmotionLevels } from "../lib/EmotionModel";
 import { TPS } from 'transformation-models';
-import EmotionModel from "../lib/EmotionModel";
-import meanFace from "../data/mean.json";
 import { silhouette } from "../data/features.json";
 
 const getBBox = (points: number[][]) => {
@@ -87,66 +85,62 @@ type BBox = {
     maxZ: number;
 }
 
-class ImageTPS {
+class CameraTPS {
     imageLandmarks: Map<string, number[]>;
-    emotionModel: EmotionModel;
-    emotionTransforms: Map<string, number[]>[];
+    cameraLandmarks: number[][];
     baseTransform: Map<string, number[]>;
     imagePoints: number[][];
-    modelPoints: number[][];
+    cameraPoints: number[][];
     imageBBox: BBox;
-    modelBBox: BBox;
+    cameraBBox: BBox;
     nilpotentTPS: TPS;
     baseTPS: TPS;
-    baseEmotionLevels: EmotionLevels;
+    activeTPS: TPS;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     hull: number[][];
     silhouetteHull: number[][];
     imageSilhouette: number[][];
     mask: Uint8ClampedArray;
+    forwardMap: Map<string, number[]>;
+    inverseMap: Map<string, number[]>;
 
-    constructor(imageLandmarks: Map<string, number[]>, emotionLevels: EmotionLevels, emotionModel: EmotionModel) {
-        this.emotionModel = emotionModel;
+    constructor(imageLandmarks: Map<string, number[]>, cameraLandmarks: number[][]) {
         this.imageLandmarks = imageLandmarks;
+        this.cameraLandmarks = cameraLandmarks;
 
         this.imagePoints = [];
-        this.modelPoints = [];
+        this.cameraPoints = [];
         
         this.silhouetteHull = [];
         for (let i = 0; i < silhouette.path.length; i++) {
-            this.silhouetteHull.push([meanFace[silhouette.path[i]*3], -meanFace[silhouette.path[i]*3+1], meanFace[silhouette.path[i]*3+2]]);
+            this.silhouetteHull.push([cameraLandmarks[silhouette.path[i]][0], cameraLandmarks[silhouette.path[i]][1], cameraLandmarks[silhouette.path[i]][2]]);
         }
 
-        this.baseEmotionLevels = {...NoEmotion, ...emotionLevels};
-        const baseEmotion = emotionModel.calculateCompositeEmotion(this.baseEmotionLevels);
         for (const [key, value] of imageLandmarks) {
-            this.imagePoints.push([...value]);
             const index = parseInt(key);
-            this.modelPoints.push([baseEmotion[index*3] + meanFace[index*3], baseEmotion[index*3+1] - meanFace[index*3+1], baseEmotion[index*3+2] + meanFace[index*3+2]]);
+            if (index < cameraLandmarks.length) {
+                this.imagePoints.push([...value]);
+                this.cameraPoints.push([cameraLandmarks[index][0], cameraLandmarks[index][1], cameraLandmarks[index][2]]);
+            } else {
+                console.log("Image landmark index out of bounds:", index);
+            }
         }
 
-        this.emotionTransforms = [];
-        this.emotionModel = emotionModel;
-
-        this.baseTPS = new TPS(this.modelPoints, this.imagePoints);
+        this.baseTPS = new TPS(this.cameraPoints, this.imagePoints);
         this.nilpotentTPS = new TPS(this.imagePoints, this.imagePoints);
+        this.activeTPS = this.nilpotentTPS;
 
         this.imageSilhouette = [];
         for (let i = 0; i < this.silhouetteHull.length; i++) {
             this.imageSilhouette.push(this.baseTPS.forward(this.silhouetteHull[i]));
         }
-        console.log("imageSilhouette", this.imageSilhouette, this.silhouetteHull);
         this.imageBBox = getBBox(this.imageSilhouette);
-        this.modelBBox = getBBox(this.silhouetteHull);
+        this.cameraBBox = getBBox(this.silhouetteHull);
 
-        this.baseTransform = this.precomputeTransformationMaps(this.nilpotentTPS);
-
-        Object.keys(NoEmotion).forEach(key => {
-            this.emotionTransforms[key] = this.getEmotionTransform({[key]: 100});
-        });
-
-        console.log("emotionTransforms", this.emotionTransforms);
+        const {forwardMap, inverseMap} = this.precomputeTransformationMaps(this.nilpotentTPS);
+        this.forwardMap = forwardMap;
+        this.inverseMap = inverseMap;
 
         this.canvas = document.createElement('canvas');
         this.canvas.width = this.imageBBox.maxX - this.imageBBox.minX;
@@ -173,58 +167,36 @@ class ImageTPS {
         return this;
     }
 
-
-
-    getEmotionTransform(emotionLevels: EmotionLevels) {
-        let emotionPoints = [];
-
-        const emotion = this.emotionModel.calculateCompositeEmotion(emotionLevels);
-        for (const [key, value] of this.imageLandmarks) {
-            const index = parseInt(key);
-            emotionPoints.push([emotion[index*3] + meanFace[index*3], emotion[index*3+1] - meanFace[index*3+1], emotion[index*3+2] + meanFace[index*3+2]]);
-        }
-        // const emotionBBox = getBBox(emotionPoints);
-        // const scaleY = (this.modelBBox.maxY - this.modelBBox.minY) / (emotionBBox.maxY - emotionBBox.minY);
-        // const scaleX = (this.modelBBox.maxX - this.modelBBox.minX) / (emotionBBox.maxX - emotionBBox.minX);
-        // const scaleZ = (this.modelBBox.maxZ - this.modelBBox.minZ) / (emotionBBox.maxZ - emotionBBox.minZ);
-        // const offsetX = this.modelBBox.minX - emotionBBox.minX * scaleX;
-        // const offsetY = this.modelBBox.minY - emotionBBox.minY * scaleY;
-        // const offsetZ = this.modelBBox.minZ - emotionBBox.minZ * scaleZ;
-
-        // emotionPoints = emotionPoints.map(p => [p[0] * scaleX + offsetX, p[1] * scaleY + offsetY, p[2] * scaleZ + offsetZ, 0]);
-
-        const emotionTPS = new TPS(this.modelPoints, emotionPoints);
-        return this.precomputeTransformationMaps(emotionTPS);
-    }
-
-    precomputeTransformationMaps(tps: TPS): Map<string, number[]> {
-        const map = new Map();
+    precomputeTransformationMaps(tps: TPS): {forwardMap: Map<string, number[]>, inverseMap: Map<string, number[]>} {
+        const forwardMap = new Map();
+        const inverseMap = new Map();
         for (let y = this.imageBBox.minY; y < this.imageBBox.maxY; y++) {
           for (let x = this.imageBBox.minX; x < this.imageBBox.maxX; x++) {
-            const key = `${x},${y}`;
-            const transform = this.baseTPS.forward(tps.forward(this.baseTPS.inverse([x, y, 0])));
-            map.set(key, transform);
+            const transform = tps.forward([x, y, 0]);
+            inverseMap.set(`${x},${y},0`, transform);
+            forwardMap.set(`${transform[0]},${transform[1]},${transform[2]}`, [x, y, 0]);
           }
         }
-        return map;
+        return {forwardMap, inverseMap};
     }
 
-    transformXY(emotionLevels: EmotionLevels, x, y): [number, number] {      
-        let xPrime = x * 100;
-        let yPrime = y * 100;
-        let weights = 100;
-
-        for (const key in emotionLevels) {
-            if (emotionLevels[key] == 0) continue;
-            const transform = this.emotionTransforms[key].get(`${x},${y}`);
-            xPrime += emotionLevels[key] * transform[0];
-            yPrime += emotionLevels[key] * transform[1];
-            weights += emotionLevels[key];
+    updateActiveTPS(newLandmarks: number[][]) {
+        if (newLandmarks.length != this.cameraLandmarks.length) {
+            return false;
         }
-        
-        return [xPrime / weights, yPrime / weights];
+        this.activeTPS = new TPS(this.cameraLandmarks, newLandmarks);
+        return true;
+    }
+
+    transformXY(x, y): [number, number] {      
+        return this.baseTPS.forward(this.activeTPS.inverse(this.baseTPS.inverse([x, y, 0])));
+        const pixToLandmark = this.inverseMap.get(`${x},${y},0`);
+        const landmarkDeform = this.activeTPS.inverse(pixToLandmark);
+        const deformToPix = this.baseTPS.forward(landmarkDeform);
+        // console.log(pixToLandmark, landmarkDeform, deformToPix);
+        return [deformToPix[0], deformToPix[1]];
     }
 }
   
-export default ImageTPS;
+export default CameraTPS;
   

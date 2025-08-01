@@ -18,7 +18,10 @@
     "vite-plugin-solid": "^2.11.6"
   },
   "dependencies": {
+    "@mediapipe/camera_utils": "^0.3.1675466862",
+    "@mediapipe/face_mesh": "^0.4.1633559619",
     "@solidjs/router": "^0.15.3",
+    "camera_utils": "link:@@mediapipe/camera_utils",
     "solid-js": "^1.9.5",
     "three": "^0.178.0",
     "transformation-models": "^1.0.2"
