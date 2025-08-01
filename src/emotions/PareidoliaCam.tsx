@@ -32,10 +32,8 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
     let offsetEmotionLevels = NoEmotion;
 
     // Performance optimization constants
-    const PROCESSING_SCALE = 0.5; // Process at half resolution
-    const TARGET_FPS = 60; // Limit to 30 FPS
-    const FRAME_INTERVAL = 1000 / TARGET_FPS;
-    let lastFrameTime = 0;
+    const PROCESSING_SCALE = 0.5; // Back to original value
+    const WORKER_COUNT = 4;
 
     const normalizeLandmarks = (landmarks: number[]) => {
         const currentWidth = imageDimensions().width;
@@ -59,84 +57,25 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
     let normalizedLandmarks = normalizeLandmarks(mediapipe.vertices);
     let cameraTPS: CameraTPS | null = null;
 
-    const faceMeshCamera = new FaceMeshCamera((landmarks) => {
-        // Frame rate limiting
-        const now = performance.now();
-        if (now - lastFrameTime < FRAME_INTERVAL) return;
-        lastFrameTime = now;
-
+    const faceMeshCamera = new FaceMeshCamera(async (landmarks) => {
         if (landmarks.length > 0 && !cameraLandmarks) {
             cameraLandmarks = landmarks;
             return;
         }
         if (!cameraTPS || !landmarks) return;
         
-        // Remove unnecessary Promise wrapper
-        if (!cameraTPS.updateActiveTPS(landmarks)) {
+        // Process frame with automatic staggering
+        const frameProcessed = cameraTPS.processFrame(landmarks);
+        if (!frameProcessed) {
+            // Frame was skipped due to timing or no available workers
             return;
         }
         
-        // Canvas scaling optimization
-        const scaledWidth = Math.floor(cameraTPS.canvas.width * PROCESSING_SCALE);
-        const scaledHeight = Math.floor(cameraTPS.canvas.height * PROCESSING_SCALE);
-        
-        // Create scaled canvas for processing
-        const scaledCanvas = document.createElement('canvas');
-        scaledCanvas.width = scaledWidth;
-        scaledCanvas.height = scaledHeight;
-        const scaledCtx = scaledCanvas.getContext('2d')!;
-        
-        // Scale the mask for processing
-        const scaledMask = new Uint8ClampedArray(scaledWidth * scaledHeight);
-        for (let y = 0; y < scaledHeight; y++) {
-            for (let x = 0; x < scaledWidth; x++) {
-                const originalX = Math.floor(x / PROCESSING_SCALE);
-                const originalY = Math.floor(y / PROCESSING_SCALE);
-                scaledMask[y * scaledWidth + x] = cameraTPS.mask[originalY * cameraTPS.canvas.width + originalX];
-            }
-        }
-        
-        const newImageData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4).fill(0);
-        const imageWidth = imageDimensions().width;
-        
-        // Process at lower resolution
-        for (let y = 0; y < scaledHeight; y++) {
-            for (let x = 0; x < scaledWidth; x++) {
-                if (scaledMask[y * scaledWidth + x] === 0) continue;
-                
-                // Scale coordinates back to original space for transformation
-                const originalX = x / PROCESSING_SCALE + cameraTPS.imageBBox.minX;
-                const originalY = y / PROCESSING_SCALE + cameraTPS.imageBBox.minY;
-                
-                const transformed = cameraTPS.transformXY(originalX, originalY);
-                const index = (y * scaledWidth + x) * 4;
-                const oldIndex = (Math.round(transformed[1]) * imageWidth + Math.round(transformed[0])) * 4;
-                
-                // Bounds checking
-                if (Math.round(transformed[0]) >= 0 && Math.round(transformed[0]) < imageWidth && 
-                    Math.round(transformed[1]) >= 0 && Math.round(transformed[1]) < imageDimensions().height) {
-                    newImageData[index] = originalImageData.data[oldIndex];
-                    newImageData[index + 1] = originalImageData.data[oldIndex + 1];
-                    newImageData[index + 2] = originalImageData.data[oldIndex + 2];
-                    newImageData[index + 3] = originalImageData.data[oldIndex + 3];
-                }
-            }
-        }
-        
-        // Use OffscreenCanvas if supported, otherwise use regular canvas
-        if ('OffscreenCanvas' in window) {
-            // Create offscreen canvas for final rendering
-            const offscreenCanvas = new OffscreenCanvas(scaledWidth, scaledHeight);
-            const offscreenCtx = offscreenCanvas.getContext('2d')!;
-            offscreenCtx.putImageData(new ImageData(newImageData, scaledWidth, scaledHeight), 0, 0);
-            
-            // Draw the offscreen canvas to the display canvas
-            cameraTPS.ctx.drawImage(offscreenCanvas, 0, 0, cameraTPS.canvas.width, cameraTPS.canvas.height);
-        } else {
-            // Fallback for browsers without OffscreenCanvas support
-            scaledCtx.putImageData(new ImageData(newImageData, scaledWidth, scaledHeight), 0, 0);
-            cameraTPS.ctx.drawImage(scaledCanvas, 0, 0, cameraTPS.canvas.width, cameraTPS.canvas.height);
-        }
+        // Optional: Log performance stats
+        // const stats = cameraTPS.getPerformanceStats();
+        // if (stats && Math.random() < 0.01) { // Log 1% of the time
+        //     console.log('Performance:', stats);
+        // }
     });
 
     let clearSVG = () => {};
@@ -149,10 +88,10 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
         // drawLandmarks();
     }
 
-    const fixImage = () => {
+    const fixImage = async () => {
         clearSVG();
         if (cameraTPS) {
-            cameraTPS.canvas.remove();
+            cameraTPS.destroy();
         }
         offsetEmotionLevels = {...currentEmotionLevels};
 
@@ -175,20 +114,34 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
                 }
             }
         }
-        cameraTPS = new CameraTPS(imageLandmarks, cameraLandmarks);
+        
+        cameraTPS = new CameraTPS(imageLandmarks, cameraLandmarks, WORKER_COUNT);
+        
+        // Set image data
+        cameraTPS.setImageData(originalImageData.data, imageDimensions().width, imageDimensions().height, PROCESSING_SCALE);
+        
+        // Wait for initialization to complete
+        await new Promise<void>((resolve) => {
+            const checkInit = () => {
+                if (cameraTPS && cameraTPS.initialized) {
+                    resolve();
+                } else {
+                    setTimeout(checkInit, 10);
+                }
+            };
+            checkInit();
+        });
+        
         cameraTPS.canvas.style.position = 'absolute';
         
         // Position the imageTPS canvas in the same coordinate system as the SVG
-        // The SVG is centered, so we need to position relative to center
         cameraTPS.canvas.style.top = '50%';
         cameraTPS.canvas.style.left = '50%';
         cameraTPS.canvas.style.transform = `translate(${-canvasRef.getBoundingClientRect().width / (2 * displayScale())}px, ${-canvasRef.getBoundingClientRect().height / (2 * displayScale())}px) translate(${cameraTPS.imageBBox.minX}px, ${cameraTPS.imageBBox.minY}px)`;
         cameraTPS.canvas.style.pointerEvents = 'none';
         
         // Insert the canvas after the canvasRef element
-        
         canvasRef.after(cameraTPS.canvas);
-
     }
 
     const drawLandmarks = () => {
