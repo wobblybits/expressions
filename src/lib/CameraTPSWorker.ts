@@ -1,12 +1,11 @@
-import { TPS } from 'transformation-models';
 import { silhouette } from "../data/features.json";
-import('transformation-models')
+import { TPSWasm } from './tps_wrapper.js';
 
 // Static data shared by all workers
 let staticData: {
     imageLandmarks: Map<string, number[]>;
     cameraLandmarks: number[][];
-    baseTPS: TPS;
+    baseTPS: TPSWasm;
     originalImageData: Uint8ClampedArray;
     imageWidth: number;
     imageHeight: number;
@@ -24,7 +23,7 @@ let staticData: {
     sharedArrayBufferSupported: boolean;
 } | null = null;
 
-self.onmessage = (e) => {
+self.onmessage = async (e) => {
     const { type, data } = e.data;
     
     switch (type) {
@@ -34,7 +33,11 @@ self.onmessage = (e) => {
                 staticData.sharedImageData = new Uint8ClampedArray(staticData.sharedImageBuffer);
                 staticData.sharedMaskData = new Uint8ClampedArray(staticData.sharedMaskBuffer);
             }
-            staticData.baseTPS = new TPS(staticData.cameraPoints, staticData.imagePoints);
+            
+            // Initialize WASM TPS
+            staticData.baseTPS = new TPSWasm(staticData.cameraPoints, staticData.imagePoints);
+            await staticData.baseTPS.initialize();
+            
             self.postMessage({ type: 'initialized' });
             break;
             
@@ -45,10 +48,10 @@ self.onmessage = (e) => {
             }
             
             if (staticData.sharedArrayBufferSupported) {
-                processFrameDirect(data.landmarks);
+                await processFrameDirect(data.landmarks);
                 self.postMessage({ type: 'frameProcessed' });
             } else {
-                const newImageData = processFrame(data.landmarks);
+                const newImageData = await processFrame(data.landmarks);
                 self.postMessage({
                     type: 'frameProcessed',
                     data: { newImageData }
@@ -59,13 +62,14 @@ self.onmessage = (e) => {
 };
 
 // Original processFrame function for fallback
-function processFrame(landmarks: number[][]): Uint8ClampedArray {
+async function processFrame(landmarks: number[][]): Promise<Uint8ClampedArray> {
     if (landmarks.length !== staticData!.cameraLandmarks.length) {
         return new Uint8ClampedArray(staticData!.scaledWidth * staticData!.scaledHeight * 4);
     }
 
     // Create TPS for this frame
-    const activeTPS = new TPS(staticData!.cameraLandmarks, landmarks);
+    const activeTPS = new TPSWasm(staticData!.cameraLandmarks, landmarks);
+    await activeTPS.initialize();
     
     const newImageData = new Uint8ClampedArray(staticData!.scaledWidth * staticData!.scaledHeight * 4).fill(0);
     
@@ -90,17 +94,19 @@ function processFrame(landmarks: number[][]): Uint8ClampedArray {
         }
     }
     
+    activeTPS.destroy();
     return newImageData;
 }
 
 // SharedArrayBuffer version
-function processFrameDirect(landmarks: number[][]): void {
+async function processFrameDirect(landmarks: number[][]): Promise<void> {
     if (landmarks.length !== staticData!.cameraLandmarks.length) {
         return;
     }
 
     // Create TPS for this frame
-    const activeTPS = new TPS(staticData!.cameraLandmarks, landmarks);
+    const activeTPS = new TPSWasm(staticData!.cameraLandmarks, landmarks);
+    await activeTPS.initialize();
     
     // Clear the shared image buffer
     staticData!.sharedImageData!.fill(0);
@@ -128,4 +134,6 @@ function processFrameDirect(landmarks: number[][]): void {
             }
         }
     }
+    
+    activeTPS.destroy();
 } 

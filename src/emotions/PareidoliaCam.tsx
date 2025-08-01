@@ -4,7 +4,7 @@ import mediapipe from "../data/mediapipe478.json";
 import Controls from "./Controls";
 import EmotionModel, { NoEmotion } from "../lib/EmotionModel";
 import meanFace from "../data/mean.json";
-import CameraTPS from "../lib/CameraTPS";
+import CameraTPSMain from "../lib/CameraTPSMain";
 import FaceMeshCamera from "../lib/Camera";
 
 const padding = 0;
@@ -55,7 +55,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
     }
 
     let normalizedLandmarks = normalizeLandmarks(mediapipe.vertices);
-    let cameraTPS: CameraTPS | null = null;
+    let cameraTPS: CameraTPSMain | null = null;
 
     const faceMeshCamera = new FaceMeshCamera(async (landmarks) => {
         if (landmarks.length > 0 && !cameraLandmarks) {
@@ -68,12 +68,12 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
         const frameProcessed = cameraTPS.processFrame(landmarks);
         
         // Log detailed performance stats periodically
-        const stats = cameraTPS.getDetailedPerformanceStats();
+        const stats = cameraTPS.getPerformanceStats();
         if (Math.random() < 0.01) { // Log 1% of the time
-            console.log('Detailed Performance Stats:', {
-                tpsCalculation: `${stats.tpsCalculation.avg.toFixed(2)}ms (${stats.tpsCalculation.count} samples)`,
-                imageTransformation: `${stats.imageTransformation.avg.toFixed(2)}ms (${stats.imageTransformation.count} samples)`,
-                total: `${(stats.tpsCalculation.avg + stats.imageTransformation.avg).toFixed(2)}ms`
+            console.log('Performance Stats:', {
+                tpsCalculation: `${stats.tpsCalculation.toFixed(2)}ms`,
+                imageTransformation: `${stats.imageTransformation.toFixed(2)}ms`,
+                total: `${(stats.tpsCalculation + stats.imageTransformation).toFixed(2)}ms`
             });
         }
     });
@@ -115,7 +115,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
             }
         }
         
-        cameraTPS = new CameraTPS(imageLandmarks, cameraLandmarks, WORKER_COUNT);
+        cameraTPS = new CameraTPSMain(imageLandmarks, cameraLandmarks);
         
         // Set image data
         cameraTPS.setImageData(originalImageData.data, imageDimensions().width, imageDimensions().height, PROCESSING_SCALE);
