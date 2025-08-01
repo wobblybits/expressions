@@ -50,9 +50,13 @@ class CameraTPS {
 
     // Performance tracking properties
     private performanceTimings: {
+        mediapipe: number[];
+        regularization: number[];
         tpsCalculation: number[];
         imageTransformation: number[];
     } = {
+        mediapipe: [],
+        regularization: [],
         tpsCalculation: [],
         imageTransformation: []
     };
@@ -63,9 +67,11 @@ class CameraTPS {
         this.useSIMD = this.simdSupported;
         this.sharedArrayBufferSupported = this.checkSharedArrayBufferSupport();
         
-        // Create workers with regular implementation
+        // Create workers with SIMD support
         for (let i = 0; i < workerCount; i++) {
-            const workerUrl = new URL('./CameraTPSWorker.ts', import.meta.url);
+            const workerUrl = this.useSIMD ? 
+                new URL('./CameraTPSWorkerSIMD.ts', import.meta.url) : 
+                new URL('./CameraTPSWorker.ts', import.meta.url);
             
             const worker = new Worker(workerUrl, { type: 'module' });
             
@@ -116,19 +122,8 @@ class CameraTPS {
                         break;
                         
                     case 'timing':
-                        if (data) {
-                            if (data.tpsCalculation) {
-                                this.performanceTimings.tpsCalculation.push(data.tpsCalculation);
-                                if (this.performanceTimings.tpsCalculation.length > 30) {
-                                    this.performanceTimings.tpsCalculation.shift();
-                                }
-                            }
-                            if (data.imageTransformation) {
-                                this.performanceTimings.imageTransformation.push(data.imageTransformation);
-                                if (this.performanceTimings.imageTransformation.length > 30) {
-                                    this.performanceTimings.imageTransformation.shift();
-                                }
-                            }
+                        if (data && data.imageTransformation) {
+                            this.recordTiming('imageTransformation', data.imageTransformation);
                         }
                         break;
                 }
@@ -419,6 +414,14 @@ class CameraTPS {
         };
 
         return {
+            mediapipe: {
+                avg: calculateAverage(this.performanceTimings.mediapipe),
+                count: this.performanceTimings.mediapipe.length
+            },
+            regularization: {
+                avg: calculateAverage(this.performanceTimings.regularization),
+                count: this.performanceTimings.regularization.length
+            },
             tpsCalculation: {
                 avg: calculateAverage(this.performanceTimings.tpsCalculation),
                 count: this.performanceTimings.tpsCalculation.length
@@ -431,7 +434,7 @@ class CameraTPS {
     }
 
     // Method to record external timing data
-    recordTiming(component: 'imageTransformation', duration: number) {
+    recordTiming(component: 'mediapipe' | 'regularization' | 'imageTransformation', duration: number) {
         this.performanceTimings[component].push(duration);
         
         // Keep only last 30 timings for rolling average

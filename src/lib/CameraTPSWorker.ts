@@ -60,20 +60,12 @@ self.onmessage = (e) => {
 
 // Original processFrame function for fallback
 function processFrame(landmarks: number[][]): Uint8ClampedArray {
-    if (landmarks.length !== staticData!.cameraPoints.length) {
+    if (landmarks.length !== staticData!.cameraLandmarks.length) {
         return new Uint8ClampedArray(staticData!.scaledWidth * staticData!.scaledHeight * 4);
     }
 
-    // TPS calculation timing
-    const tpsStart = performance.now();
-    
     // Create TPS for this frame
     const activeTPS = new TPS(staticData!.cameraLandmarks, landmarks);
-    
-    const tpsTime = performance.now() - tpsStart;
-    
-    // Image transformation timing (separate from TPS calculation)
-    const imageTransformationStart = performance.now();
     
     const newImageData = new Uint8ClampedArray(staticData!.scaledWidth * staticData!.scaledHeight * 4).fill(0);
     
@@ -97,17 +89,6 @@ function processFrame(landmarks: number[][]): Uint8ClampedArray {
             }
         }
     }
-    
-    const imageTransformationTime = performance.now() - imageTransformationStart;
-    
-    // Send timing data
-    self.postMessage({
-        type: 'timing',
-        data: { 
-            tpsCalculation: tpsTime,
-            imageTransformation: imageTransformationTime 
-        }
-    });
     
     return newImageData;
 }
