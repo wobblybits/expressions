@@ -4,7 +4,7 @@ import mediapipe from "../data/mediapipe478.json";
 import Controls from "./Controls";
 import EmotionModel, { NoEmotion } from "../lib/EmotionModel";
 import meanFace from "../data/mean.json";
-import CameraTPSMain from "../lib/CameraTPSMain";
+import CameraTPS from "../lib/CameraTPS";
 import FaceMeshCamera from "../lib/Camera";
 
 const padding = 0;
@@ -57,7 +57,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
     }
 
     let normalizedLandmarks = normalizeLandmarks(mediapipe.vertices);
-    let cameraTPS: CameraTPSMain | null = null;
+    let cameraTPS: CameraTPS | null = null;
 
     const faceMeshCamera = new FaceMeshCamera(async (landmarks) => {
         if (landmarks.length > 0 && !cameraLandmarks) {

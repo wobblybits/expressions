@@ -389,6 +389,15 @@ class CameraTPS {
         });
     }
 
+    destroy() {
+        if (this.gpu) {
+            this.gpu.destroy();
+        }
+        if (this.canvas && this.canvas.parentNode) {
+            this.canvas.parentNode.removeChild(this.canvas);
+        }
+    }
+
 }
   
 export default CameraTPS;
