@@ -1,105 +1,81 @@
-// Simple, reliable WASM module loader
-let wasmModule = null;
-let fallbackModule = null;
-
-async function loadWasmModule() {
-    if (wasmModule) return wasmModule;
-    
-    try {
-        // Use a unique module name to avoid conflicts
-        const Module = {
-            locateFile: (path) => path === 'tps.wasm' ? '/tps.wasm' : path,
-            onRuntimeInitialized: () => {
-                console.log('WASM TPS module initialized');
-            },
-            noExitRuntime: true, // Add this to prevent conflicts
-            print: (text) => console.log('TPS WASM:', text),
-            printErr: (text) => console.error('TPS WASM Error:', text)
-        };
-        
-        // Load the WASM module script with a unique global name
-        const script = document.createElement('script');
-        script.src = '/tps.js';
-        script.async = true;
-        
-        // Wait for module to be ready
-        await new Promise((resolve, reject) => {
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-        
-        // Check if the module loaded properly
-        if (typeof window.Module !== 'undefined' && window.Module._tps_create) {
-            wasmModule = window.Module;
-            return wasmModule;
-        }
-        
-        throw new Error('WASM module not properly loaded');
-        
-    } catch (error) {
-        console.warn('WASM TPS failed to load:', error);
-        return null;
-    }
-}
-
-async function loadFallbackModule() {
-    if (!fallbackModule) {
-        const { TPS } = await import('transformation-models');
-        fallbackModule = TPS;
-    }
-    return fallbackModule;
-}
-
 class TPSWasm {
     constructor(controlPoints, targetPoints) {
         this.controlPoints = controlPoints;
         this.targetPoints = targetPoints;
         this.module = null;
         this.tps = null;
-        this.fallback = null;
         this.initialized = false;
     }
 
     async initialize() {
-        try {
-            // Try WASM first
-            this.module = await loadWasmModule();
-            
-            if (this.module && this.module._tps_create) {
-                await this.initializeWasm();
-                return;
+        // Extract the memory management functions from tps.js
+        const getHeapMax = () => 2147483648;
+        const alignMemory = (size, alignment) => Math.ceil(size / alignment) * alignment;
+        
+        const growMemory = (size) => {
+            // This would need access to wasmMemory which isn't available yet
+            // For now, return success
+            return 1;
+        };
+        
+        const _emscripten_resize_heap = (requestedSize) => {
+            const oldSize = 0; // This would be HEAPU8.length in the real implementation
+            requestedSize >>>= 0;
+            const maxHeapSize = getHeapMax();
+            if (requestedSize > maxHeapSize) {
+                return false;
             }
-            
-        } catch (error) {
-            console.warn('WASM initialization failed:', error);
+            for (let cutDown = 1; cutDown <= 4; cutDown *= 2) {
+                const overGrownHeapSize = oldSize * (1 + .2 / cutDown);
+                const newSize = Math.min(maxHeapSize, alignMemory(Math.max(requestedSize, overGrownHeapSize), 65536));
+                const replacement = growMemory(newSize);
+                if (replacement) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // Create the proper import object structure that the WASM module expects
+        const importObject = {
+            a: {
+                a: _emscripten_resize_heap
+            }
+        };
+
+        const results = await WebAssembly.instantiateStreaming(fetch("/tps.wasm"), importObject);
+
+        this.module = results.instance;
+        
+        // Assign all the WASM exports based on the tps.js assignWasmExports function
+        // From tps.js: Module["_tps_destroy"]=_tps_destroy=wasmExports["d"];
+        this._tps_destroy = this.module.exports._tps_destroy || this.module.exports.d;
+        this._free = this.module.exports._free || this.module.exports.e;
+        this._malloc = this.module.exports._malloc || this.module.exports.f;
+        this._tps_create = this.module.exports._tps_create || this.module.exports.g;
+        this._tps_forward = this.module.exports._tps_forward || this.module.exports.h;
+        this._tps_inverse = this.module.exports._tps_inverse || this.module.exports.i;
+        this.__emscripten_stack_restore = this.module.exports.__emscripten_stack_restore || this.module.exports.j;
+        this.__emscripten_stack_alloc = this.module.exports.__emscripten_stack_alloc || this.module.exports.k;
+        this._emscripten_stack_get_current = this.module.exports._emscripten_stack_get_current || this.module.exports.l;
+        
+        // Check if all required functions are available
+        const requiredFunctions = [
+            '_tps_destroy', '_free', '_malloc', '_tps_create', 
+            '_tps_forward', '_tps_inverse'
+        ];
+        
+        const missingFunctions = requiredFunctions.filter(func => !this[func]);
+        if (missingFunctions.length > 0) {
+            console.error("Missing functions:", missingFunctions);
+            console.error("Available exports:", Object.keys(this.module.exports));
+            throw new Error(`Missing required TPS functions: ${missingFunctions.join(', ')}`);
         }
         
-        // Fall back to JS implementation
-        await this.initializeFallback();
-    }
-
-    async initializeWasm() {
-        // Convert points to flat arrays
         const flatControlPoints = this.controlPoints.flat();
         const flatTargetPoints = this.targetPoints.flat();
-        
-        // Allocate memory
-        const controlPtr = this.module._malloc(flatControlPoints.length * 8);
-        const targetPtr = this.module._malloc(flatTargetPoints.length * 8);
-        
-        if (controlPtr === 0 || targetPtr === 0) {
-            throw new Error('Failed to allocate memory');
-        }
-        
-        // Copy data to WASM memory
-        for (let i = 0; i < flatControlPoints.length; i++) {
-            this.module.HEAPF64[controlPtr / 8 + i] = flatControlPoints[i];
-            this.module.HEAPF64[targetPtr / 8 + i] = flatTargetPoints[i];
-        }
-        
-        // Create TPS instance
-        this.tps = this.module._tps_create(controlPtr, targetPtr, this.controlPoints.length);
+    
+        this.tps = this._tps_create(flatControlPoints, flatTargetPoints, this.controlPoints.length);
         
         if (this.tps === 0) {
             throw new Error('Failed to create TPS instance');
@@ -109,80 +85,40 @@ class TPSWasm {
         console.log('WASM TPS initialized successfully');
     }
 
-    async initializeFallback() {
-        const TPS = await loadFallbackModule();
-        this.fallback = new TPS(this.controlPoints, this.targetPoints);
-        this.initialized = true;
-        console.log('Fallback JS TPS initialized');
-    }
-
+    // Forward transformation: transform from control points to target points
     forward(point) {
-        if (!this.initialized) {
+        if (!this.initialized || !this.tps) {
             throw new Error('TPS not initialized');
         }
         
-        if (this.fallback) {
-            return this.fallback.forward(point);
-        }
+        const [x, y] = point;
+        const outX = new Float64Array(1);
+        const outY = new Float64Array(1);
         
-        // Allocate output memory
-        const outX = this.module._malloc(8);
-        const outY = this.module._malloc(8);
+        this._tps_forward(this.tps, x, y, outX, outY);
         
-        if (outX === 0 || outY === 0) {
-            throw new Error('Failed to allocate output memory');
-        }
-        
-        try {
-            this.module._tps_forward(this.tps, point[0], point[1], outX, outY);
-            
-            const result = [
-                this.module.HEAPF64[outX / 8],
-                this.module.HEAPF64[outY / 8]
-            ];
-            
-            return result;
-        } finally {
-            this.module._free(outX);
-            this.module._free(outY);
-        }
+        return [outX[0], outY[0]];
     }
 
+    // Inverse transformation: transform from target points to control points
     inverse(point) {
-        if (!this.initialized) {
+        if (!this.initialized || !this.tps) {
             throw new Error('TPS not initialized');
         }
         
-        if (this.fallback) {
-            return this.fallback.inverse(point);
-        }
+        const [x, y] = point;
+        const outX = new Float64Array(1);
+        const outY = new Float64Array(1);
         
-        // Allocate output memory
-        const outX = this.module._malloc(8);
-        const outY = this.module._malloc(8);
+        this._tps_inverse(this.tps, x, y, outX, outY);
         
-        if (outX === 0 || outY === 0) {
-            throw new Error('Failed to allocate output memory');
-        }
-        
-        try {
-            this.module._tps_inverse(this.tps, point[0], point[1], outX, outY);
-            
-            const result = [
-                this.module.HEAPF64[outX / 8],
-                this.module.HEAPF64[outY / 8]
-            ];
-            
-            return result;
-        } finally {
-            this.module._free(outX);
-            this.module._free(outY);
-        }
+        return [outX[0], outY[0]];
     }
 
+    // Clean up WASM resources
     destroy() {
-        if (this.tps && this.module && !this.fallback) {
-            this.module._tps_destroy(this.tps);
+        if (this.tps && this._tps_destroy) {
+            this._tps_destroy(this.tps);
             this.tps = null;
         }
         this.initialized = false;

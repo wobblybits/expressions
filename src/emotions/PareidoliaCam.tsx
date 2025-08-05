@@ -118,19 +118,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
         cameraTPS = new CameraTPSMain(imageLandmarks, cameraLandmarks);
         
         // Set image data
-        cameraTPS.setImageData(originalImageData.data, imageDimensions().width, imageDimensions().height, PROCESSING_SCALE);
-        
-        // Wait for initialization to complete
-        await new Promise<void>((resolve) => {
-            const checkInit = () => {
-                if (cameraTPS && cameraTPS.initialized) {
-                    resolve();
-                } else {
-                    setTimeout(checkInit, 10);
-                }
-            };
-            checkInit();
-        });
+        await cameraTPS.setImageData(originalImageData.data, imageDimensions().width, imageDimensions().height, PROCESSING_SCALE);
         
         cameraTPS.canvas.style.position = 'absolute';
         

@@ -1,5 +1,5 @@
 import { NoEmotion, type EmotionLevels } from "../lib/EmotionModel";
-import { TPSWasm } from './tps_wrapper.js';
+import { TPS } from 'transformation-models';
 import EmotionModel from "../lib/EmotionModel";
 import meanFace from "../data/mean.json";
 import { silhouette } from "../data/features.json";
@@ -96,8 +96,8 @@ class ImageTPS {
     modelPoints: number[][];
     imageBBox: BBox;
     modelBBox: BBox;
-    nilpotentTPS: TPSWasm | null = null;
-    baseTPS: TPSWasm | null = null;
+    nilpotentTPS: TPS;
+    baseTPS: TPS;
     baseEmotionLevels: EmotionLevels;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
@@ -107,80 +107,102 @@ class ImageTPS {
     mask: Uint8ClampedArray;
 
     constructor(imageLandmarks: Map<string, number[]>, emotionLevels: EmotionLevels, emotionModel: EmotionModel) {
-        this.imageLandmarks = imageLandmarks;
         this.emotionModel = emotionModel;
+        this.imageLandmarks = imageLandmarks;
+
+        this.imagePoints = [];
+        this.modelPoints = [];
+        
+        this.silhouetteHull = [];
+        for (let i = 0; i < silhouette.path.length; i++) {
+            this.silhouetteHull.push([meanFace[silhouette.path[i]*3], -meanFace[silhouette.path[i]*3+1], meanFace[silhouette.path[i]*3+2]]);
+        }
+
+        this.baseEmotionLevels = {...NoEmotion, ...emotionLevels};
+        const baseEmotion = emotionModel.calculateCompositeEmotion(this.baseEmotionLevels);
+        for (const [key, value] of imageLandmarks) {
+            this.imagePoints.push([...value]);
+            const index = parseInt(key);
+            this.modelPoints.push([baseEmotion[index*3] + meanFace[index*3], baseEmotion[index*3+1] - meanFace[index*3+1], baseEmotion[index*3+2] + meanFace[index*3+2]]);
+        }
+
         this.emotionTransforms = [];
-        this.baseTransform = new Map();
-        this.imagePoints = Array.from(imageLandmarks.values());
-        this.modelPoints = this.getModelPoints(emotionLevels);
-        this.imageBBox = getBBox(this.imagePoints);
-        this.modelBBox = getBBox(this.modelPoints);
-        
-        // Initialize canvas
+        this.emotionModel = emotionModel;
+
+        this.baseTPS = new TPS(this.modelPoints, this.imagePoints);
+        this.nilpotentTPS = new TPS(this.imagePoints, this.imagePoints);
+
+        this.imageSilhouette = [];
+        for (let i = 0; i < this.silhouetteHull.length; i++) {
+            this.imageSilhouette.push(this.baseTPS.forward(this.silhouetteHull[i]));
+        }
+        console.log("imageSilhouette", this.imageSilhouette, this.silhouetteHull);
+        this.imageBBox = getBBox(this.imageSilhouette);
+        this.modelBBox = getBBox(this.silhouetteHull);
+
+        this.baseTransform = this.precomputeTransformationMaps(this.nilpotentTPS);
+
+        Object.keys(NoEmotion).forEach(key => {
+            this.emotionTransforms[key] = this.getEmotionTransform({[key]: 100});
+        });
+
+        console.log("emotionTransforms", this.emotionTransforms);
+
         this.canvas = document.createElement('canvas');
-        this.ctx = this.canvas.getContext('2d')!;
-        
-        // Initialize TPS instances
-        this.initializeTPS();
-        
-        // Create mask
-        this.mask = this.createMask();
-        
-        // Set canvas size
         this.canvas.width = this.imageBBox.maxX - this.imageBBox.minX;
         this.canvas.height = this.imageBBox.maxY - this.imageBBox.minY;
-    }
+        this.canvas.style.position = 'absolute';
+        this.canvas.style.top = this.imageBBox.minY + 'px';
+        this.canvas.style.left = this.imageBBox.minX + 'px';
+        this.canvas.style.pointerEvents = 'none';
+        this.canvas.style.background = 'transparent';
+        this.ctx = this.canvas.getContext('2d');
 
-    private async initializeTPS() {
-        try {
-            // Initialize base TPS
-            this.baseTPS = new TPSWasm(this.modelPoints, this.imagePoints);
-            await this.baseTPS.initialize();
-            
-            // Initialize nilpotent TPS
-            this.nilpotentTPS = new TPSWasm(this.imagePoints, this.imagePoints);
-            await this.nilpotentTPS.initialize();
-            
-            console.log('ImageTPS WASM initialized successfully');
-        } catch (error) {
-            console.error('Failed to initialize ImageTPS WASM:', error);
-        }
-    }
+        this.ctx.fillStyle = 'transparent';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    private getModelPoints(emotionLevels: EmotionLevels): number[][] {
-        const composite = this.emotionModel.calculateCompositeEmotion(emotionLevels);
-        if (!composite) {
-            // Fallback to mean face if no composite emotion
-            const points: number[][] = [];
-            for (let i = 0; i < meanFace.length; i += 3) {
-                points.push([meanFace[i], meanFace[i + 1], meanFace[i + 2]]);
+        // this.hull = calculateConvexHull(this.imagePoints);
+        this.hull = calculateConvexHull(this.imageSilhouette);
+        this.mask = new Uint8ClampedArray(this.canvas.width * this.canvas.height);
+        for (let y = 0; y < this.canvas.height; y++) {
+            for (let x = 0; x < this.canvas.width; x++) {
+                this.mask[y * this.canvas.width + x] = isPointInConvexHull([x + this.imageBBox.minX, y + this.imageBBox.minY], this.hull) ? 255 : 0;
             }
-            return points;
         }
-        
-        // Combine mean face with composite emotion
-        const points: number[][] = [];
-        for (let i = 0; i < meanFace.length; i += 3) {
-            const x = meanFace[i] + composite[i];
-            const y = meanFace[i + 1] - composite[i + 1]; // Note the subtraction for Y
-            const z = meanFace[i + 2] + composite[i + 2];
-            points.push([x, y, z]);
-        }
-        return points;
+
+        return this;
     }
 
-    private createMask(): Uint8ClampedArray {
-        const width = this.imageBBox.maxX - this.imageBBox.minX;
-        const height = this.imageBBox.maxY - this.imageBBox.minY;
-        return new Uint8ClampedArray(width * height);
+
+
+    getEmotionTransform(emotionLevels: EmotionLevels) {
+        let emotionPoints = [];
+
+        const emotion = this.emotionModel.calculateCompositeEmotion(emotionLevels);
+        for (const [key, value] of this.imageLandmarks) {
+            const index = parseInt(key);
+            emotionPoints.push([emotion[index*3] + meanFace[index*3], emotion[index*3+1] - meanFace[index*3+1], emotion[index*3+2] + meanFace[index*3+2]]);
+        }
+        // const emotionBBox = getBBox(emotionPoints);
+        // const scaleY = (this.modelBBox.maxY - this.modelBBox.minY) / (emotionBBox.maxY - emotionBBox.minY);
+        // const scaleX = (this.modelBBox.maxX - this.modelBBox.minX) / (emotionBBox.maxX - emotionBBox.minX);
+        // const scaleZ = (this.modelBBox.maxZ - this.modelBBox.minZ) / (emotionBBox.maxZ - emotionBBox.minZ);
+        // const offsetX = this.modelBBox.minX - emotionBBox.minX * scaleX;
+        // const offsetY = this.modelBBox.minY - emotionBBox.minY * scaleY;
+        // const offsetZ = this.modelBBox.minZ - emotionBBox.minZ * scaleZ;
+
+        // emotionPoints = emotionPoints.map(p => [p[0] * scaleX + offsetX, p[1] * scaleY + offsetY, p[2] * scaleZ + offsetZ, 0]);
+
+        const emotionTPS = new TPS(this.modelPoints, emotionPoints);
+        return this.precomputeTransformationMaps(emotionTPS);
     }
 
-    precomputeTransformationMaps(tps: TPSWasm): Map<string, number[]> {
+    precomputeTransformationMaps(tps: TPS): Map<string, number[]> {
         const map = new Map();
         for (let y = this.imageBBox.minY; y < this.imageBBox.maxY; y++) {
           for (let x = this.imageBBox.minX; x < this.imageBBox.maxX; x++) {
             const key = `${x},${y}`;
-            const transform = this.baseTPS!.forward(tps.forward(this.baseTPS!.inverse([x, y, 0])));
+            const transform = this.baseTPS.forward(tps.forward(this.baseTPS.inverse([x, y, 0])));
             map.set(key, transform);
           }
         }
