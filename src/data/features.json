@@ -13,9 +13,93 @@
     },
     "mouthLine": {
         "path": [78, 308],
-        "closed": true,
+        "closed": false,
         "name": "Mouth line",
         "description": "Draw a line from left to right that connects the left edge of the mouth to the right edge of the mouth."
+    },
+    "chinLine": {
+        "path": [148,377],
+        "closed": false,
+        "name": "Chin line",
+        "description": "Draw a line from left to right that represents the bottom of the chin."
+    },
+    "cheekboneLine": {
+        "path": [118, 347],
+        "closed": false,
+        "name": "Cheekbone line",
+        "description": "Draw a line from left to right that connects the tops of the cheekbones."
+    },
+    "browLine": {
+        "path": [105,334],
+        "closed": false,
+        "name": "Brow line",
+        "description": "Draw a line from left to right that connects the centers of the eyebrows."
+    },
+    "upperChin": {
+        "path": [83, 313],
+        "closed": false,
+        "name": "Upper chin",
+        "description": "Draw a line from left to right that represents the top of the chin under the lips."
+    },
+    "upperLip": {
+        "path": [37, 267],
+        "closed": false,
+        "name": "Upper lip",
+        "description": "Draw a line from left to right that connects the peaks of the upper lip."
+    },
+    "topBridge": {
+        "path": [10, 168],
+        "closed": false,
+        "name": "Top symmetry",
+        "description": "Draw a line from the top center of the forehead to the bridge of the nose."
+    },
+    "outerEyes": {
+        "path": [225, 446],
+        "closed": false,
+        "name": "Outer corners of eyes",
+        "description": "Draw a line from left to right that connects the outer corners of the eyes."
+    },
+    "innerEyes": {
+        "path": [173, 398],
+        "closed": false,
+        "name": "Inner corners of eyes",
+        "description": "Draw a line from left to right that connects the inner corners (tear ducts) of the eyes."
+    },
+    "leftEye": {
+        "path": [263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249],
+        "closed": true,
+        "name": "Right eye",
+        "description": "Starting at the outer right corner of the right eye, draw a counter-clockwise path that follows the outer edge of the eye."
+    },
+    "rightEye": {
+        "path": [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 144, 163, 7],
+        "closed": true,
+        "name": "Left eye",
+        "description": "Starting at the outer left corner of the left eye, draw a clockwise path that follows the outer edge of the eye."
+    },
+    "leftEyeBisection": {
+        "path": [470, 472],
+        "closed": false,
+        "name": "Left eye bisect",
+        "description": "Draw a line from top to bottom that bisects the left eye."
+    },
+    "rightEyeBisection": {
+        "path": [475, 477],
+        "closed": false,
+        "name": "Right eye bisect",
+        "description": "Draw a line from top to bottom that bisects the right eye."
+    },
+    "foreheadLine": {
+        "path": [67, 297],
+        "closed": false,
+        "name": "Forehead line",
+        "description": "Draw a line from left to right that connects the middle of the forehead above the eyebrows."
+    },
+    "jawLine": {
+        "path": [172, 397],
+        "closed": false,
+        "name": "Jaw line",
+        "description": "Draw a line from left to right that represents the bottom of the jaw at the outside of the face."
     },
     "silhouette": {
         "path": [
@@ -45,19 +129,6 @@
         "closed": true,
         "name": "Right eyebrow",
         "description": "Draw a line from right to left representing the right eyebrow."
-    },
-
-    "leftEye": {
-        "path": [263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249],
-        "closed": true,
-        "name": "Right eye",
-        "description": "Starting at the outer right corner of the right eye, draw a counter-clockwise path that follows the outer edge of the eye."
-    },
-    "rightEye": {
-        "path": [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 144, 163, 7],
-        "closed": true,
-        "name": "Left eye",
-        "description": "Starting at the outer left corner of the left eye, draw a clockwise path that follows the outer edge of the eye."
     },
 
     "mouth": {

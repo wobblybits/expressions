@@ -9,9 +9,9 @@ const App: Component = () => {
   return (
     <Router>
       <Route path="/" component={GamePage} />
-        <Route path="/game" component={GamePage} />
-        <Route path="/pareidolia" component={PareidoliaPage} />
-        <Route path="/camera" component={CameraPage} />
+      <Route path="/game" component={GamePage} />
+      <Route path="/pareidolia" component={PareidoliaPage} />
+      <Route path="/camera" component={CameraPage} />
     </Router>
   );
 }

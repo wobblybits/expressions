@@ -32,8 +32,10 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
     let offsetEmotionLevels = NoEmotion;
 
     // Performance optimization constants
-    const PROCESSING_SCALE = 0.5; // Back to original value
-    const WORKER_COUNT = 4;
+    const PROCESSING_SCALE = 1; // Must be integer amount
+    const TARGET_FPS = 60; // Limit to 30 FPS
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
+    let lastFrameTime = 0;
 
     const normalizeLandmarks = (landmarks: number[]) => {
         const currentWidth = imageDimensions().width;
@@ -64,18 +66,21 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
         }
         if (!cameraTPS || !landmarks) return;
         
-        // Process frame with automatic staggering
-        const frameProcessed = cameraTPS.processFrame(landmarks);
-        
-        // Log detailed performance stats periodically
-        const stats = cameraTPS.getPerformanceStats();
-        if (Math.random() < 0.01) { // Log 1% of the time
-            console.log('Performance Stats:', {
-                tpsCalculation: `${stats.tpsCalculation.toFixed(2)}ms`,
-                imageTransformation: `${stats.imageTransformation.toFixed(2)}ms`,
-                total: `${(stats.tpsCalculation + stats.imageTransformation).toFixed(2)}ms`
-            });
+        if (!cameraTPS.updateActiveTargets(landmarks)) {
+            return;
         }
+        requestAnimationFrame(() => {
+            // cameraTPS.draw();
+            // try {
+            //     cameraTPS.drawGPU();
+            //     console.log("GPU");
+            // }
+            // catch (e) {
+                cameraTPS.draw();
+            //     console.log("CPU");
+            // }
+        });
+        
     });
 
     let clearSVG = () => {};
@@ -114,12 +119,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
                 }
             }
         }
-        
-        cameraTPS = new CameraTPSMain(imageLandmarks, cameraLandmarks);
-        
-        // Set image data
-        await cameraTPS.setImageData(originalImageData.data, imageDimensions().width, imageDimensions().height, PROCESSING_SCALE);
-        
+        cameraTPS = new CameraTPS(imageLandmarks, cameraLandmarks, originalImageData, PROCESSING_SCALE);
         cameraTPS.canvas.style.position = 'absolute';
         
         // Position the imageTPS canvas in the same coordinate system as the SVG
@@ -224,8 +224,10 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
             const img = new Image();
             img.onload = () => {
                 // Update dimensions
-                const newWidth = img.width;
-                const newHeight = img.height;
+                const maxSize = 640;
+                const downsize = Math.min(1, maxSize / img.width, maxSize / img.height);
+                const newWidth = img.width * downsize;
+                const newHeight = img.height * downsize;
                 setImageDimensions({ width: newWidth, height: newHeight });
                 
                 // Calculate display scale
@@ -239,7 +241,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
                     ctx = canvasRef.getContext("2d");
                     
                     // Draw image to canvas
-                    ctx?.drawImage(img, 0, 0);
+                    ctx?.drawImage(img, 0, 0, newWidth, newHeight);
                 }
                 
                 // Resize SVG (keep original dimensions for coordinate mapping)
@@ -454,45 +456,45 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
                     }}
                 ></svg>
             </div>
-            <Controls title="Pareidolia" emotionModel={emotionModel} callback={(emotionLevels) => {
-                currentEmotionLevels = emotionLevels;
-            }}>
+            <div style={{display: "flex", "flex-direction": "column", "align-items": "center", "justify-content": "center", "width": "300px" }}>
+            <h1>Pareidolia</h1>
+            <div id="controls">
                 <h4>{featureName() in features ? features[featureName()].name : "Upload an Image"}</h4>
                 <div>{featureName() in features ? features[featureName()].description : "Drag and drop an image to get started."}</div>
-                <input type="button" value="Back" onClick={() => {
-                    currentFeature = Math.max(0, currentFeature - 1);
-                    fixFeature();
-                }} />
-                <input type="button" value="Skip" onClick={() => {
-                    fixedPoints[featureName()] = [];
-                    currentFeature++;
-                    if (currentFeature >= Object.keys(features).length) {
-                        currentFeature = 0;
-                    }
-                    fixFeature();
-                }} />
-                <input type="button" value="Next" onClick={() => {
-                    currentFeature++;
-                    if (currentFeature >= Object.keys(features).length) {
-                        currentFeature = 0;
-                    }
-                    fixFeature();
-                }} />
-                <br />
-                <input type="button" value="Do it!" onClick={() => {
-                    fixImage();
-                }} />
-                <h4>Camera</h4>
-                <input type="button" value="Start" onClick={() => {
-                    faceMeshCamera.start().catch(error => {
-                        console.error('Failed to start camera:', error);
-                    });
-                }} />
-                <input type="button" value="Stop" onClick={() => {
-                    faceMeshCamera.stop();
-                }} />
-                
-            </Controls>
+                    <input type="button" value="Back" onClick={() => {
+                        currentFeature = Math.max(0, currentFeature - 1);
+                        fixFeature();
+                    }} />
+                    <input type="button" value="Skip" onClick={() => {
+                        fixedPoints[featureName()] = [];
+                        currentFeature++;
+                        if (currentFeature >= Object.keys(features).length) {
+                            currentFeature = 0;
+                        }
+                        fixFeature();
+                    }} />
+                    <input type="button" value="Next" onClick={() => {
+                        currentFeature++;
+                        if (currentFeature >= Object.keys(features).length) {
+                            currentFeature = 0;
+                        }
+                        fixFeature();
+                    }} />
+                    <br />
+                    <input type="button" value="Do it!" onClick={() => {
+                        fixImage();
+                    }} />
+                    <h4>Camera</h4>
+                    <input type="button" value="Start" onClick={() => {
+                        faceMeshCamera.start().catch(error => {
+                            console.error('Failed to start camera:', error);
+                        });
+                    }} />
+                    <input type="button" value="Stop" onClick={() => {
+                        faceMeshCamera.stop();
+                    }} />      
+                </div>
+            </div>
         </div>
     );
 }
