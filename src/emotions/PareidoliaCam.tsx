@@ -32,7 +32,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
     let offsetEmotionLevels = NoEmotion;
 
     // Performance optimization constants
-    const PROCESSING_SCALE = 0.5; // Process at half resolution
+    const PROCESSING_SCALE = 1; // Must be integer amount
     const TARGET_FPS = 60; // Limit to 30 FPS
     const FRAME_INTERVAL = 1000 / TARGET_FPS;
     let lastFrameTime = 0;
@@ -71,72 +71,21 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
         }
         if (!cameraTPS || !landmarks) return;
         
-        // Remove unnecessary Promise wrapper
-        if (!cameraTPS.updateActiveTPS(landmarks)) {
+        if (!cameraTPS.updateActiveTargets(landmarks)) {
             return;
         }
+        requestAnimationFrame(() => {
+            // cameraTPS.draw();
+            // try {
+            //     cameraTPS.drawGPU();
+            //     console.log("GPU");
+            // }
+            // catch (e) {
+                cameraTPS.draw();
+            //     console.log("CPU");
+            // }
+        });
         
-        // Canvas scaling optimization
-        const scaledWidth = Math.floor(cameraTPS.canvas.width * PROCESSING_SCALE);
-        const scaledHeight = Math.floor(cameraTPS.canvas.height * PROCESSING_SCALE);
-        
-        // Create scaled canvas for processing
-        const scaledCanvas = document.createElement('canvas');
-        scaledCanvas.width = scaledWidth;
-        scaledCanvas.height = scaledHeight;
-        const scaledCtx = scaledCanvas.getContext('2d')!;
-        
-        // Scale the mask for processing
-        const scaledMask = new Uint8ClampedArray(scaledWidth * scaledHeight);
-        for (let y = 0; y < scaledHeight; y++) {
-            for (let x = 0; x < scaledWidth; x++) {
-                const originalX = Math.floor(x / PROCESSING_SCALE);
-                const originalY = Math.floor(y / PROCESSING_SCALE);
-                scaledMask[y * scaledWidth + x] = cameraTPS.mask[originalY * cameraTPS.canvas.width + originalX];
-            }
-        }
-        
-        const newImageData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4).fill(0);
-        const imageWidth = imageDimensions().width;
-        
-        // Process at lower resolution
-        for (let y = 0; y < scaledHeight; y++) {
-            for (let x = 0; x < scaledWidth; x++) {
-                if (scaledMask[y * scaledWidth + x] === 0) continue;
-                
-                // Scale coordinates back to original space for transformation
-                const originalX = x / PROCESSING_SCALE + cameraTPS.imageBBox.minX;
-                const originalY = y / PROCESSING_SCALE + cameraTPS.imageBBox.minY;
-                
-                const transformed = cameraTPS.transformXY(originalX, originalY);
-                const index = (y * scaledWidth + x) * 4;
-                const oldIndex = (Math.round(transformed[1]) * imageWidth + Math.round(transformed[0])) * 4;
-                
-                // Bounds checking
-                if (Math.round(transformed[0]) >= 0 && Math.round(transformed[0]) < imageWidth && 
-                    Math.round(transformed[1]) >= 0 && Math.round(transformed[1]) < imageDimensions().height) {
-                    newImageData[index] = originalImageData.data[oldIndex];
-                    newImageData[index + 1] = originalImageData.data[oldIndex + 1];
-                    newImageData[index + 2] = originalImageData.data[oldIndex + 2];
-                    newImageData[index + 3] = originalImageData.data[oldIndex + 3];
-                }
-            }
-        }
-        
-        // Use OffscreenCanvas if supported, otherwise use regular canvas
-        if ('OffscreenCanvas' in window) {
-            // Create offscreen canvas for final rendering
-            const offscreenCanvas = new OffscreenCanvas(scaledWidth, scaledHeight);
-            const offscreenCtx = offscreenCanvas.getContext('2d')!;
-            offscreenCtx.putImageData(new ImageData(newImageData, scaledWidth, scaledHeight), 0, 0);
-            
-            // Draw the offscreen canvas to the display canvas
-            cameraTPS.ctx.drawImage(offscreenCanvas, 0, 0, cameraTPS.canvas.width, cameraTPS.canvas.height);
-        } else {
-            // Fallback for browsers without OffscreenCanvas support
-            scaledCtx.putImageData(new ImageData(newImageData, scaledWidth, scaledHeight), 0, 0);
-            cameraTPS.ctx.drawImage(scaledCanvas, 0, 0, cameraTPS.canvas.width, cameraTPS.canvas.height);
-        }
     });
 
     let clearSVG = () => {};
@@ -175,7 +124,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
                 }
             }
         }
-        cameraTPS = new CameraTPS(imageLandmarks, cameraLandmarks);
+        cameraTPS = new CameraTPS(imageLandmarks, cameraLandmarks, originalImageData, PROCESSING_SCALE);
         cameraTPS.canvas.style.position = 'absolute';
         
         // Position the imageTPS canvas in the same coordinate system as the SVG
@@ -283,8 +232,10 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
             const img = new Image();
             img.onload = () => {
                 // Update dimensions
-                const newWidth = img.width;
-                const newHeight = img.height;
+                const maxSize = 640;
+                const downsize = Math.min(1, maxSize / img.width, maxSize / img.height);
+                const newWidth = img.width * downsize;
+                const newHeight = img.height * downsize;
                 setImageDimensions({ width: newWidth, height: newHeight });
                 
                 // Calculate display scale
@@ -298,7 +249,7 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
                     ctx = canvasRef.getContext("2d");
                     
                     // Draw image to canvas
-                    ctx?.drawImage(img, 0, 0);
+                    ctx?.drawImage(img, 0, 0, newWidth, newHeight);
                 }
                 
                 // Resize SVG (keep original dimensions for coordinate mapping)
@@ -513,45 +464,45 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
                     }}
                 ></svg>
             </div>
-            <Controls title="Pareidolia" emotionModel={emotionModel} callback={(emotionLevels) => {
-                currentEmotionLevels = emotionLevels;
-            }}>
+            <div style={{display: "flex", "flex-direction": "column", "align-items": "center", "justify-content": "center", "width": "300px" }}>
+            <h1>Pareidolia</h1>
+            <div id="controls">
                 <h4>{featureName() in features ? features[featureName()].name : "Upload an Image"}</h4>
                 <div>{featureName() in features ? features[featureName()].description : "Drag and drop an image to get started."}</div>
-                <input type="button" value="Back" onClick={() => {
-                    currentFeature = Math.max(0, currentFeature - 1);
-                    fixFeature();
-                }} />
-                <input type="button" value="Skip" onClick={() => {
-                    fixedPoints[featureName()] = [];
-                    currentFeature++;
-                    if (currentFeature >= Object.keys(features).length) {
-                        currentFeature = 0;
-                    }
-                    fixFeature();
-                }} />
-                <input type="button" value="Next" onClick={() => {
-                    currentFeature++;
-                    if (currentFeature >= Object.keys(features).length) {
-                        currentFeature = 0;
-                    }
-                    fixFeature();
-                }} />
-                <br />
-                <input type="button" value="Do it!" onClick={() => {
-                    fixImage();
-                }} />
-                <h4>Camera</h4>
-                <input type="button" value="Start" onClick={() => {
-                    faceMeshCamera.start().catch(error => {
-                        console.error('Failed to start camera:', error);
-                    });
-                }} />
-                <input type="button" value="Stop" onClick={() => {
-                    faceMeshCamera.stop();
-                }} />
-                
-            </Controls>
+                    <input type="button" value="Back" onClick={() => {
+                        currentFeature = Math.max(0, currentFeature - 1);
+                        fixFeature();
+                    }} />
+                    <input type="button" value="Skip" onClick={() => {
+                        fixedPoints[featureName()] = [];
+                        currentFeature++;
+                        if (currentFeature >= Object.keys(features).length) {
+                            currentFeature = 0;
+                        }
+                        fixFeature();
+                    }} />
+                    <input type="button" value="Next" onClick={() => {
+                        currentFeature++;
+                        if (currentFeature >= Object.keys(features).length) {
+                            currentFeature = 0;
+                        }
+                        fixFeature();
+                    }} />
+                    <br />
+                    <input type="button" value="Do it!" onClick={() => {
+                        fixImage();
+                    }} />
+                    <h4>Camera</h4>
+                    <input type="button" value="Start" onClick={() => {
+                        faceMeshCamera.start().catch(error => {
+                            console.error('Failed to start camera:', error);
+                        });
+                    }} />
+                    <input type="button" value="Stop" onClick={() => {
+                        faceMeshCamera.stop();
+                    }} />      
+                </div>
+            </div>
         </div>
     );
 }

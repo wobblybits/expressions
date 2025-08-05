@@ -53,7 +53,7 @@ class FaceMeshCamera {
     });
   }
 
-  private regularizeLandmarks(landmarks: FaceLandmarks[]): number[][] {
+  private regularizeLandmarks(landmarks: FaceLandmarks[], imageScale: number = 1): number[][] {
     // Calculate face center
     if (!landmarks) return [];
 
@@ -63,17 +63,25 @@ class FaceMeshCamera {
       z: landmarks.reduce((sum, l) => sum + l.z, 0) / landmarks.length
     };
 
+    let transformed = landmarks.map(l => ({
+      x: l.x,
+      y: l.y,
+      z: l.z
+    }));
+
     // Translate to origin
-    const translated = landmarks.map(l => ({
+    const translated = transformed.map(l => ({
       x: l.x - center.x,
       y: l.y - center.y,
       z: l.z - center.z
     }));
 
+    transformed = translated;
+
     // Calculate rotation to align face
     // Use ear landmarks (left: 234, right: 454) to determine face orientation
-    const leftEar = translated[234];
-    const rightEar = translated[454];
+    const leftEar = transformed[234-1];
+    const rightEar = transformed[454-1];
     
     // Calculate face width vector
     const faceWidth = {
@@ -86,7 +94,7 @@ class FaceMeshCamera {
     const yawAngle = Math.atan2(faceWidth.z, faceWidth.x);
     
     // Apply Y rotation (around Y axis)
-    const rotatedY = translated.map(l => {
+    const rotatedY = transformed.map(l => {
       const cosY = Math.cos(-yawAngle);
       const sinY = Math.sin(-yawAngle);
       return {
@@ -96,37 +104,61 @@ class FaceMeshCamera {
       };
     });
 
-    // Use nose bridge and chin to calculate pitch rotation
-    const noseBridge = rotatedY[168]; // Nose bridge
-    const chin = rotatedY[152]; // Chin
+    transformed = rotatedY;
+
+    // // Use nose bridge and chin to calculate pitch rotation
+    // const noseBridge = transformed[168-1]; // Nose bridge
+    // const chin = transformed[152-1]; // Chin
     
-    const faceHeight = {
-      x: chin.x - noseBridge.x,
-      y: chin.y - noseBridge.y,
-      z: chin.z - noseBridge.z
-    };
+    // const faceHeight = {
+    //   x: chin.x - noseBridge.x,
+    //   y: chin.y - noseBridge.y,
+    //   z: chin.z - noseBridge.z
+    // };
     
-    // Calculate rotation angle around X axis to align height with Y axis
-    const pitchAngle = Math.atan2(-faceHeight.z, faceHeight.y);
+    // // Calculate rotation angle around X axis to align height with Y axis
+    // const pitchAngle = Math.atan2(-faceHeight.z, faceHeight.y);
     
-    // Apply X rotation (around X axis)
-    const rotatedX = rotatedY.map(l => {
-      const cosX = Math.cos(-pitchAngle);
-      const sinX = Math.sin(-pitchAngle);
-      return {
-        x: l.x,
-        y: l.y * cosX - l.z * sinX,
-        z: l.y * sinX + l.z * cosX
-      };
-    });
+    // // Apply X rotation (around X axis)
+    // const rotatedX = transformed.map(l => {
+    //   const cosX = Math.cos(-pitchAngle);
+    //   const sinX = Math.sin(-pitchAngle);
+    //   return {
+    //     x: l.x,
+    //     y: l.y * cosX - l.z * sinX,
+    //     z: l.y * sinX + l.z * cosX
+    //   };
+    // });
+
+    // transformed = rotatedX;
+
+
+    // // Calculate rotation angle around Y axis to align width with X axis
+    // const rollAngle = Math.atan2(faceWidth.y, faceWidth.x);
+    
+    // // Apply Y rotation (around Y axis)
+    // const rotatedZ = transformed.map(l => {
+    //   const cosY = Math.cos(-rollAngle);
+    //   const sinY = Math.sin(-rollAngle);
+    //   return {
+    //     x: l.x * cosY - l.z * sinY,
+    //     y: l.y,
+    //     z: l.x * sinY + l.z * cosY
+    //   };
+    // });
+
+    // transformed = rotatedZ;
 
     // Find y range for scaling
-    const yCoords = rotatedX.map(l => l.y);
+    const yCoords = transformed.map(l => l.y);
     const yRange = Math.max(...yCoords) - Math.min(...yCoords);
-    const scale = 2 / yRange; // Scale so y range is -1 to 1
+    const scale = 20000 / yRange; // 
 
     // Scale all coordinates
-    return rotatedX.map(l => [l.x * scale, -l.y * scale, l.z * scale]);
+    let result = transformed.map(l => [l.x * scale * imageScale, -l.y * scale * imageScale, l.z * scale * imageScale]);
+    // result = result.map(l => [Math.round(l[0]), Math.round(l[1]), Math.round(l[2])]);
+    // console.log(result);
+    return result;
   }
 
   start(): Promise<void> {

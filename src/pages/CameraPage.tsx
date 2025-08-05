@@ -1,17 +1,17 @@
 import type { Component } from 'solid-js';
 import EmotionModel from '../lib/EmotionModel';
-import Pareidolia from '../emotions/Pareidolia';
+import PareidoliaCam from '../emotions/PareidoliaCam';
 
-const PareidoliaPage: Component = () => {
+const CameraPage: Component = () => {
   const emotionModel = new EmotionModel();
   return (
     <div style={{
       width: '100vw',
       height: '100vh',
     }}>
-      <Pareidolia emotionModel={emotionModel} />
+      <PareidoliaCam emotionModel={emotionModel} />
     </div>
   );
 };
 
-export default PareidoliaPage;
+export default CameraPage;
