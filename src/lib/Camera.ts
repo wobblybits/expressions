@@ -12,9 +12,14 @@ class FaceMeshCamera {
   private camera: Camera;
   private videoElement: HTMLVideoElement;
   private onLandmarksCallback?: (landmarks: number[][]) => void;
+  
+  // Add smoothing state
+  private smoothedLandmarks: number[][] | null = null;
+  private smoothingFactor: number = 0.3; // Adjustable: 0 = no smoothing, 1 = full smoothing
 
-  constructor(onLandmarks?: (landmarks: number[][]) => void) {
+  constructor(onLandmarks?: (landmarks: number[][]) => void, smoothingFactor: number = 0.3) {
     this.onLandmarksCallback = onLandmarks;
+    this.smoothingFactor = Math.max(0, Math.min(1, smoothingFactor)); // Clamp between 0 and 1
     
     // Create video element (not added to DOM)
     this.videoElement = document.createElement('video');
@@ -156,9 +161,42 @@ class FaceMeshCamera {
 
     // Scale all coordinates
     let result = transformed.map(l => [l.x * scale * imageScale, -l.y * scale * imageScale, l.z * scale * imageScale]);
-    // result = result.map(l => [Math.round(l[0]), Math.round(l[1]), Math.round(l[2])]);
-    // console.log(result);
+    
+    // Apply temporal smoothing
+    result = this.applyTemporalSmoothing(result);
+    
     return result;
+  }
+
+  private applyTemporalSmoothing(currentLandmarks: number[][]): number[][] {
+    if (!this.smoothedLandmarks) {
+      // Initialize with current landmarks on first frame
+      this.smoothedLandmarks = currentLandmarks.map(landmark => [...landmark]);
+      return this.smoothedLandmarks;
+    }
+
+    // Apply exponential moving average
+    const smoothed = currentLandmarks.map((landmark, i) => {
+      const prev = this.smoothedLandmarks![i];
+      return [
+        prev[0] + this.smoothingFactor * (landmark[0] - prev[0]),
+        prev[1] + this.smoothingFactor * (landmark[1] - prev[1]),
+        prev[2] + this.smoothingFactor * (landmark[2] - prev[2])
+      ];
+    });
+
+    this.smoothedLandmarks = smoothed;
+    return smoothed;
+  }
+
+  // Add method to adjust smoothing factor at runtime
+  setSmoothingFactor(factor: number): void {
+    this.smoothingFactor = Math.max(0, Math.min(1, factor));
+  }
+
+  // Add method to reset smoothing state (useful when face is lost/found)
+  resetSmoothing(): void {
+    this.smoothedLandmarks = null;
   }
 
   start(): Promise<void> {
