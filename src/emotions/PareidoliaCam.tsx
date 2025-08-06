@@ -70,15 +70,16 @@ const PareidoliaCam: Component<{emotionModel: EmotionModel}> = (props) => {
             return;
         }
         requestAnimationFrame(() => {
-            // cameraTPS.draw();
-            // try {
-            //     cameraTPS.drawGPU();
-            //     console.log("GPU");
-            // }
-            // catch (e) {
-                cameraTPS.draw();
-            //     console.log("CPU");
-            // }
+            // For debugging, only use GPU version
+            try {
+                cameraTPS.drawGPU();
+                // console.log(cameraTPS.canvas.getContext('2d').getImageData(0, 0, 600, 600));
+                console.log("GPU");
+            }
+            catch (e) {
+                cameraTPS.draw(); // Fallback to CPU only if GPU fails
+                console.log("CPU fallback");
+            }
         });
         
     });
