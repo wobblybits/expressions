@@ -124,11 +124,11 @@ export default class GPU {
           visibility: GPUShaderStage.COMPUTE,
           buffer: { type: 'read-only-storage' }
         },
-        // Image data buffer
+        // Image data buffer - FIXED: Changed to read-only-storage
         {
           binding: 7,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'storage' }
+          buffer: { type: 'read-only-storage' }
         },
         // Face data buffer (with blur mask in alpha)
         {
@@ -151,10 +151,10 @@ export default class GPU {
         distortNumPoints: u32,
         imageWidth: u32,
         imageHeight: u32,
-        FaceMinY: u32,
-        FaceMinX: u32,
-        FaceWidth: u32,
-        FaceHeight: u32,
+        faceMinY: u32,
+        faceMinX: u32,
+        faceWidth: u32,
+        faceHeight: u32,
       }
 
       @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -164,22 +164,27 @@ export default class GPU {
       @group(0) @binding(4) var<storage, read> modelPoints: array<f32>;
       @group(0) @binding(5) var<storage, read> baseCoeffs: array<f32>;
       @group(0) @binding(6) var<storage, read> model2distortCoeffs: array<f32>;
-      @group(0) @binding(7) var<storage, read_write> imageData: array<u32>;
+      @group(0) @binding(7) var<storage, read> imageData: array<u32>;
       @group(0) @binding(8) var<storage, read_write> faceData: array<u32>;
 
-      // Radial basis function - r^2 * log(r)
+      // Radial basis function - r^2 * log(r) using built-in length function
       fn kernelFunction(dx: f32, dy: f32) -> f32 {
         if (dx == 0.0 && dy == 0.0) {
           return 0.0;
         }
-        let dist = dx * dx + dy * dy;
-        return dist * log(dist);
+        let dist = length(vec2<f32>(dx, dy));
+        return dist * dist * log(dist * dist);
       }
 
-      // Transform XY function: baseTPS.forward(activeTPS.inverse(baseTPS.inverse(point)))
+      // Transform XY function with vec2 optimizations
       fn transformXY(point: vec2<f32>) -> vec2<f32> {
         let baseNumPoints = uniforms.baseNumPoints;
         let coeffsOffset = baseNumPoints + 3u;
+        
+        // Validate coefficient array bounds
+        if (baseNumPoints == 0u || coeffsOffset * 4u > arrayLength(&baseCoeffs)) {
+          return point; // Return original point if coefficients are invalid
+        }
         
         // Step 1: baseTPS.inverse(point) - use inverse coefficients (offset 0)
         var baseInverse = vec2<f32>(0.0, 0.0);
@@ -188,28 +193,36 @@ export default class GPU {
           var Yo = baseCoeffs[coeffsOffset] + baseCoeffs[coeffsOffset + 1] * point.x + baseCoeffs[coeffsOffset + 2] * point.y;
           
           for (var r = 0u; r < baseNumPoints; r++) {
-            let sourceX = imagePoints[r * 2u];
-            let sourceY = imagePoints[r * 2u + 1u];
-            let tmp = kernelFunction(point.x - sourceX, point.y - sourceY);
+            let sourcePoint = vec2<f32>(imagePoints[r * 2u], imagePoints[r * 2u + 1u]);
+            let diff = point - sourcePoint;
+            let tmp = kernelFunction(diff.x, diff.y);
             Xo += baseCoeffs[r + 3u] * tmp;
             Yo += baseCoeffs[coeffsOffset + r + 3u] * tmp;
           }
           baseInverse = vec2<f32>(Xo, Yo);
         }
         
-        // Step 2: activeTPS.inverse(baseInverse)
+        // Step 2: activeTPS.inverse(baseInverse) - use forward coefficients with swapped points
         var activeInverse = vec2<f32>(0.0, 0.0);
         {
           let distortNumPoints = uniforms.distortNumPoints;
           let distortCoeffsOffset = distortNumPoints + 3u;
           
+          // Validate model2distort coefficients
+          if (distortNumPoints == 0u || distortCoeffsOffset * 2u > arrayLength(&model2distortCoeffs)) {
+            return baseInverse; // Return base inverse if coefficients are invalid
+          }
+          
+          // For inverse transformation, we need to find the input that produces baseInverse as output
+          // Since we have inverse coefficients, we can use them directly
           var Xo = model2distortCoeffs[0] + model2distortCoeffs[1] * baseInverse.x + model2distortCoeffs[2] * baseInverse.y;
           var Yo = model2distortCoeffs[distortCoeffsOffset] + model2distortCoeffs[distortCoeffsOffset + 1] * baseInverse.x + model2distortCoeffs[distortCoeffsOffset + 2] * baseInverse.y;
           
           for (var r = 0u; r < distortNumPoints; r++) {
-            let sourceX = modelPoints[r * 2u];
-            let sourceY = modelPoints[r * 2u + 1u];
-            let tmp = kernelFunction(baseInverse.x - sourceX, baseInverse.y - sourceY);
+            // For inverse transformation, use distortPoints as source (since we want to map back to model)
+            let sourcePoint = vec2<f32>(distortPoints[r * 2u], distortPoints[r * 2u + 1u]);
+            let diff = baseInverse - sourcePoint;
+            let tmp = kernelFunction(diff.x, diff.y);
             Xo += model2distortCoeffs[r + 3u] * tmp;
             Yo += model2distortCoeffs[distortCoeffsOffset + r + 3u] * tmp;
           }
@@ -223,9 +236,9 @@ export default class GPU {
           var Yo = baseCoeffs[coeffsOffset * 3u] + baseCoeffs[coeffsOffset * 3u + 1u] * activeInverse.x + baseCoeffs[coeffsOffset * 3u + 2u] * activeInverse.y;
           
           for (var r = 0u; r < baseNumPoints; r++) {
-            let sourceX = meshPoints[r * 2u];
-            let sourceY = meshPoints[r * 2u + 1u];
-            let tmp = kernelFunction(activeInverse.x - sourceX, activeInverse.y - sourceY);
+            let sourcePoint = vec2<f32>(meshPoints[r * 2u], meshPoints[r * 2u + 1u]);
+            let diff = activeInverse - sourcePoint;
+            let tmp = kernelFunction(diff.x, diff.y);
             Xo += baseCoeffs[coeffsOffset * 2u + r + 3u] * tmp;
             Yo += baseCoeffs[coeffsOffset * 3u + r + 3u] * tmp;
           }
@@ -235,90 +248,72 @@ export default class GPU {
         return result;
       }
 
-      // Sample image data with bounds checking
+      // Sample image data with bounds checking - use optimized unpacking
       fn sampleImage(x: i32, y: i32) -> vec4<f32> {
-        if (x < 0 || x >= i32(uniforms.imageWidth) || y < 0 || y >= i32(uniforms.imageHeight)) {
-          return vec4<f32>(0.0, 0.0, 0.0, 0.0);
-        }
+        // if (x < 0 || x >= i32(uniforms.imageWidth) || y < 0 || y >= i32(uniforms.imageHeight)) {
+        //   return vec4<f32>(0.0, 0.0, 0.0, 0.0);
+        // }
         
-        let index = u32(y) * uniforms.imageWidth + u32(x);
+        let index = (u32(y) % uniforms.imageHeight) * uniforms.imageWidth + (u32(x) % uniforms.imageWidth);
         let pixelData = imageData[index];
         
-        // Convert RGBA from uint32 to vec4
-        return vec4<f32>(
-          f32(pixelData & 0xFFu) / 255.0,
-          f32((pixelData >> 8u) & 0xFFu) / 255.0,
-          f32((pixelData >> 16u) & 0xFFu) / 255.0,
-          f32((pixelData >> 24u) & 0xFFu) / 255.0
-        );
+        // Use the optimized unpacking function
+        return unpackRGBA(pixelData);
       }
 
-      // Pack RGBA to uint32
+      // Optimized RGBA packing using vector operations - ARGB format to match unpacking
       fn packRGBA(color: vec4<f32>) -> u32 {
-        let r = u32(clamp(color.r, 0.0, 1.0) * 255.0);
-        let g = u32(clamp(color.g, 0.0, 1.0) * 255.0);
-        let b = u32(clamp(color.b, 0.0, 1.0) * 255.0);
-        let a = u32(clamp(color.a, 0.0, 1.0) * 255.0);
-        return r | (g << 8u) | (b << 16u) | (a << 24u);
+        let rgba = vec4<u32>(color * 255.0);
+        return (rgba.a << 24u) | (rgba.r << 16u) | (rgba.g << 8u) | rgba.b;
       }
 
-      // Extract alpha channel (blur mask) from uint32
+      // Optimized RGBA unpacking - ARGB format
+      fn unpackRGBA(pixelData: u32) -> vec4<f32> {
+        return vec4<f32>(
+          f32((pixelData >> 16u) & 0xFFu), // R
+          f32((pixelData >> 8u) & 0xFFu),  // G
+          f32(pixelData & 0xFFu),          // B
+          f32((pixelData >> 24u) & 0xFFu)  // A
+        ) / 255.0;
+      }
+
+      // Extract alpha channel (blur mask) from uint32 - ARGB format
       fn getBlurMask(pixelData: u32) -> f32 {
         return f32((pixelData >> 24u) & 0xFFu);
       }
 
       @compute @workgroup_size(8, 8)
-      fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+      fn main(@builtin(global_invocation_id) global_id: vec3<u32>, @builtin(local_invocation_id) local_id: vec3<u32>) {
         let x = global_id.x;
         let y = global_id.y;
         
-        // Check bounds
-        if (x >= uniforms.FaceWidth || y >= uniforms.FaceHeight) {
+        // Early bounds check
+        if (x >= uniforms.faceWidth || y >= uniforms.faceHeight) {
           return;
         }
         
-        let faceIndex = y * uniforms.FaceWidth + x;
+        let faceIndex = y * uniforms.faceWidth + x;
         
-        // Get blur mask value from faceData alpha channel
-        let facePixel = faceData[faceIndex];
-        let blurMaskValue = getBlurMask(facePixel);
-        
-        // Skip if mask is zero
-        if (blurMaskValue == 0.0) {
+        // Add bounds check for buffer access to prevent crashes
+        if (faceIndex >= arrayLength(&faceData)) {
           return;
         }
+
+        let alpha = faceData[faceIndex] >> 24u;
+        if (alpha == 0u) {
+          return;
+        }
+
+        // Transform the current pixel coordinates
+        let point = vec2<f32>(f32(uniforms.faceMinX + x), f32(uniforms.faceMinY + y));
+        let transformed = point + f32(alpha)/255.0 * (transformXY(point) - point);
         
-        // Calculate original image coordinates
-        let originalX = f32(x) + f32(uniforms.FaceMinX);
-        let originalY = f32(y) + f32(uniforms.FaceMinY);
+        // Convert float coordinates to integers for sampling
+        let sampleX = i32(transformed.x);
+        let sampleY = i32(transformed.y);
         
-        // Apply TPS transformation
-        let transformed = transformXY(vec2<f32>(originalX, originalY));
-        
-        // DEBUG: Output original vs transformed coordinates
-        let debugColor = u32(originalX) | 
-                        (u32(originalY) << 8u) | 
-                        (u32(transformed.x) << 16u) | 
-                        (255u << 24u);
-        faceData[faceIndex] = debugColor;
-        return;
-        
-        // Clamp transformation to reasonable bounds
-        let clampedX = clamp(transformed.x, 0.0, f32(uniforms.imageWidth - 1));
-        let clampedY = clamp(transformed.y, 0.0, f32(uniforms.imageHeight - 1));
-        
-        // Apply blur mask weighting
-        let weight = blurMaskValue / 255.0;
-        let weightedX = originalX + weight * (clampedX - originalX);
-        let weightedY = originalY + weight * (clampedY - originalY);
-        
-        // Sample image data
-        let sampleX = i32(round(weightedX));
-        let sampleY = i32(round(weightedY));
-        let color = sampleImage(sampleX, sampleY);
-        
-        // Write to output buffer
-        faceData[faceIndex] = packRGBA(color);
+        // Sample the image and write to output
+        faceData[faceIndex] = packRGBA(sampleImage(sampleX, sampleY));
       }
     `;
 
@@ -432,6 +427,51 @@ export default class GPU {
   }
 
   /**
+   * Batch update multiple buffers in a single command encoder
+   * @param {Object} updates - Object containing buffer updates
+   */
+  batchUpdateBuffers(updates) {
+    if (!this.initialized) {
+      console.error('GPU not initialized');
+      return;
+    }
+
+    const commandEncoder = this.device.createCommandEncoder();
+    
+    // Batch all buffer writes
+    if (updates.uniforms) {
+      commandEncoder.writeBuffer(this.uniformBuffer, 0, updates.uniforms);
+    }
+    if (updates.meshPoints) {
+      commandEncoder.writeBuffer(this.meshPointsBuffer, 0, updates.meshPoints);
+    }
+    if (updates.imagePoints) {
+      commandEncoder.writeBuffer(this.imagePointsBuffer, 0, updates.imagePoints);
+    }
+    if (updates.distortPoints) {
+      commandEncoder.writeBuffer(this.distortPointsBuffer, 0, updates.distortPoints);
+    }
+    if (updates.modelPoints) {
+      commandEncoder.writeBuffer(this.modelPointsBuffer, 0, updates.modelPoints);
+    }
+    if (updates.baseCoeffs) {
+      commandEncoder.writeBuffer(this.baseCoeffsBuffer, 0, updates.baseCoeffs);
+    }
+    if (updates.model2distortCoeffs) {
+      commandEncoder.writeBuffer(this.model2distortCoeffsBuffer, 0, updates.model2distortCoeffs);
+    }
+    if (updates.imageData) {
+      commandEncoder.writeBuffer(this.imageDataBuffer, 0, updates.imageData);
+    }
+    if (updates.faceData) {
+      commandEncoder.writeBuffer(this.faceDataBuffer, 0, updates.faceData);
+    }
+    
+    // Submit all updates in one command
+    this.device.queue.submit([commandEncoder.finish()]);
+  }
+
+  /**
    * Update uniform buffer with scalar values
    * @param {Object} uniforms - Uniform values
    */
@@ -446,10 +486,10 @@ export default class GPU {
       uniforms.distortNumPoints || 0,
       uniforms.imageWidth || 0,
       uniforms.imageHeight || 0,
-      uniforms.FaceMinY || 0,
-      uniforms.FaceMinX || 0,
-      uniforms.FaceWidth || 0,
-      uniforms.FaceHeight || 0
+      uniforms.faceMinY || 0,
+      uniforms.faceMinX || 0,
+      uniforms.faceWidth || 0,
+      uniforms.faceHeight || 0
     ]);
 
     this.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData);
@@ -500,14 +540,6 @@ export default class GPU {
     // Check buffer size and adjust if necessary
     const bufferSizeInFloats = this.baseCoeffsBuffer.size / 4;
     const requiredSize = coeffsOffset * 4;
-    
-    console.log('updateBaseCoeffs debug:', {
-      baseNumPoints,
-      coeffsOffset,
-      bufferSizeInFloats,
-      requiredSize,
-      bufferSize: this.baseCoeffsBuffer.size
-    });
     
     if (requiredSize > bufferSizeInFloats) {
       console.error('Buffer too small for coefficients. Need', requiredSize, 'floats, buffer has', bufferSizeInFloats);
@@ -592,6 +624,7 @@ export default class GPU {
     
     this.computePassEncoder.setPipeline(this.computePipeline);
     this.computePassEncoder.setBindGroup(0, this.bindGroup);
+
     this.computePassEncoder.dispatchWorkgroups(workgroupCountX, workgroupCountY);
     
     this.computePassEncoder.end();
@@ -625,8 +658,8 @@ export default class GPU {
     const data = stagingBuffer.getMappedRange();
     
     // Copy the data before unmapping to avoid detachment issues
-    const result = new Uint8Array(data);
-    const copiedData = new Uint8Array(result);
+    const result = new Uint8ClampedArray(data);
+    const copiedData = new Uint8ClampedArray(result);
     
     stagingBuffer.unmap();
     

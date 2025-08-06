@@ -65,7 +65,7 @@ export default class TPS extends Transformation {
    */
   __calculateParameters(sourcePoints, targetPoints) {
     if (sourcePoints.length !== targetPoints.length) {
-      console.warn('Number of points do not mach!');
+      console.warn('Number of points do not match!');
       return null;
     }
 

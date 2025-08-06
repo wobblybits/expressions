@@ -227,10 +227,10 @@ class CameraTPS {
             // Update combined base coefficients (forward and inverse)
             console.log(this.baseTPS.inverseParameters.Xc, this.baseTPS.inverseParameters.Yc, this.baseTPS.forwardParameters.Xc, this.baseTPS.forwardParameters.Yc);
             this.gpu.updateBaseCoeffs(
-                this.baseTPS.forwardParameters.Xc,
-                this.baseTPS.forwardParameters.Yc,
                 this.baseTPS.inverseParameters.Xc,
                 this.baseTPS.inverseParameters.Yc,
+                this.baseTPS.forwardParameters.Xc,
+                this.baseTPS.forwardParameters.Yc,
             );
             
             // Update active TPS coefficients
@@ -249,6 +249,17 @@ class CameraTPS {
             // Update face data with blur mask in alpha channel
             this.gpu.updateFaceDataWithBlurMask(this.blurMask);
             
+            this.gpu.updateUniforms({
+                baseNumPoints: this.cameraPoints.length,
+                distortNumPoints: this.cameraLandmarks.filter((_, i) => i % this.landmarkSkip === 0).length,
+                imageWidth: this.imageData.width,
+                imageHeight: this.imageData.height,
+                faceMinY: this.imageBBox.minY,
+                faceMinX: this.imageBBox.minX,
+                faceWidth: this.imageBBox.maxX - this.imageBBox.minX,
+                faceHeight: this.imageBBox.maxY - this.imageBBox.minY
+            });
+
             console.log('GPU buffers initialized successfully');
         }).catch((error) => {
             console.error('Failed to initialize GPU:', error);
@@ -359,25 +370,29 @@ class CameraTPS {
         const faceWidth = this.imageBBox.maxX - this.imageBBox.minX;
         const faceHeight = this.imageBBox.maxY - this.imageBBox.minY;
         
+        // Use lowercase property names
+        this.gpu.updateUniforms({
+            baseNumPoints: this.cameraPoints.length,
+            distortNumPoints: this.cameraLandmarks.filter((_, i) => i % this.landmarkSkip === 0).length,
+            imageWidth: this.imageData.width,
+            imageHeight: this.imageData.height,
+            faceMinY: this.imageBBox.minY,
+            faceMinX: this.imageBBox.minX,
+            faceWidth: faceWidth,  // This should now work
+            faceHeight: faceHeight  // This should now work
+        });
+        
         this.gpu.execute(faceWidth, faceHeight).then(() => {
             // Read the result and convert back to ImageData
             this.gpu.readBuffer(this.gpu.faceDataBuffer, faceWidth * faceHeight * 4).then((output) => {
-                // Convert Uint8Array to Uint32Array for pixel data
-                const uint32Data = new Uint32Array(output.buffer, output.byteOffset, output.byteLength / 4);
-                const rgbaData = new Uint8ClampedArray(faceWidth * faceHeight * 4);
+                // Convert Uint8Array to Uint8ClampedArray for ImageData
+                const imageData = new ImageData(output, faceWidth, faceHeight);
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                for (let i = 0; i < uint32Data.length; i++) {
-                    const pixel = uint32Data[i];
-                    rgbaData[i * 4] = pixel & 0xFF;
-                    rgbaData[i * 4 + 1] = (pixel >> 8) & 0xFF;
-                    rgbaData[i * 4 + 2] = (pixel >> 16) & 0xFF;
-                    rgbaData[i * 4 + 3] = (pixel >> 24) & 0xFF;
-                }
+                // Put the face data at (0, 0) since the canvas is positioned via CSS transform
+                this.offscreenCtx.putImageData(imageData, 0, 0);
+                this.ctx.drawImage(this.offscreenCanvas, 0, 0, this.canvas.width, this.canvas.height);
                 
-                const imageData = new ImageData(rgbaData, faceWidth, faceHeight);
-                this.ctx.putImageData(imageData, 0, 0);
-                
-                // Rewrite blur mask to faceDataBuffer to prevent feedback loop
                 this.gpu.updateFaceDataWithBlurMask(this.blurMask);
             }).catch((error) => {
                 console.error('Error reading GPU buffer:', error);
