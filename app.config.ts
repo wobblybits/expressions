@@ -6,6 +6,11 @@ export default defineConfig({
     prerender: {
       routes: ["/", "/about", "/game", "/composite", "/pareidolia"],
       crawlLinks: false
-    },
+    }
   },
+  vite: {
+    build: {
+      target: 'esnext',
+    },
+  }
 }); 

@@ -1,5 +1,5 @@
 import { Component, JSX } from 'solid-js';
-import Navigation from './Navigation';
+import Navigation from './Navigation.tsx';
 
 interface PageLayoutProps {
   title: string;

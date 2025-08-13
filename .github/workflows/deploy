@@ -24,9 +24,28 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
+      
+      # Setup pnpm
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          
+      # Setup Node.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
         
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      # Install dependencies and build
+      - name: Install and Build
         run: |
           pnpm install
           pnpm build
+          
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .output/public
