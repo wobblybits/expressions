@@ -120,7 +120,7 @@ class CameraTPS {
         this.cameraPoints = [];
 
         this.imageData = imageData;
-        this.landmarkSkip = 4;
+        this.landmarkSkip = 2;
         
         this.silhouetteHull = [];
         for (let i = 0; i < silhouette.path.length; i++) {

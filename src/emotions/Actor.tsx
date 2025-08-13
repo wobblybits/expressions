@@ -1,14 +1,14 @@
 import type { Component } from 'solid-js';
 import * as THREE from 'three';
 import ExpressionModel from '../lib/ExpressionModel';
-import { NoEmotion, type EmotionLevels, randomExpression } from '../lib/EmotionModel';
+import EmotionModel, { NoEmotion, type EmotionLevels, randomExpression } from '../lib/EmotionModel';
 import Scene from '../lib/Scene';
 
-const Actor: Component<{ id: string, width: number, height: number, expressionModel: ExpressionModel, emotionLevels?: EmotionLevels, rotation?: number[] }> = (props) => {
+const Actor: Component<{ id: string, width: number, height: number, expressionModel?: ExpressionModel, emotionLevels?: EmotionLevels, rotation?: number[] }> = (props) => {
     const scene = new Scene(props.width, props.height);
-    const expressionModel = props.expressionModel;
+    const expressionModel = props.expressionModel || new ExpressionModel(new EmotionModel());
     let expression: THREE.Object3D | undefined;
-    let emotionLevels = {...NoEmotion, ...props.emotionLevels};
+    let emotionLevels = {...NoEmotion, ...props.emotionLevels || {}};
     let rotation = props.rotation || [0, 0, 0];
 
     let targetRotation = [0, 0, 0];

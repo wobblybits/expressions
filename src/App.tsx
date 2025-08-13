@@ -1,17 +1,18 @@
-import type { Component } from 'solid-js';
-import { Router, Route } from '@solidjs/router';
-import GamePage from './pages/GamePage';
-import CompositePage from './pages/CompositePage';
-import PareidoliaPage from './pages/PareidoliaPage';
-import CameraPage from './pages/CameraPage';
+import { Component, Suspense } from 'solid-js';
+import { Router } from "@solidjs/router";
+import { FileRoutes } from "@solidjs/start/router";
+import "./index.css";
 
 const App: Component = () => {
   return (
-    <Router>
-      <Route path="/" component={GamePage} />
-      <Route path="/game" component={GamePage} />
-      <Route path="/pareidolia" component={PareidoliaPage} />
-      <Route path="/camera" component={CameraPage} />
+    <Router
+      root={props => (
+        <Suspense fallback={<div>Loading...</div>}>
+          {props.children}
+        </Suspense>
+      )}
+    >
+      <FileRoutes />
     </Router>
   );
 }

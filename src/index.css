@@ -224,3 +224,15 @@ h1 {
 #pareidolia svg {
     z-index: 100;
 }
+
+#pareidolia svg circle:hover {
+    stroke: purple;
+    fill: purple;
+    opacity: .5;
+    r: 3;
+}
+
+#face-svg circle {
+    cursor: pointer;
+    filter: drop-shadow(0 0 4px yellow) drop-shadow(0 0 8px yellow) drop-shadow(0 0 2px yellow);
+}

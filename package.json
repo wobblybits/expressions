@@ -4,14 +4,14 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "start": "vite",
-    "dev": "vite",
-    "build": "vite build",
-    "serve": "vite preview"
+    "dev": "npx vinxi dev",
+    "build": "npx vinxi build",
+    "start": "npx vinxi start"
   },
   "license": "MIT",
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.7",
+    "@types/node": "^24.2.0",
     "tailwindcss": "^4.0.7",
     "typescript": "^5.7.2",
     "vite": "^6.0.0",
@@ -21,6 +21,7 @@
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/face_mesh": "^0.4.1633559619",
     "@solidjs/router": "^0.15.3",
+    "@solidjs/start": "^1.1.7",
     "camera_utils": "link:@@mediapipe/camera_utils",
     "solid-js": "^1.9.5",
     "three": "^0.178.0",
