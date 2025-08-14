@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 class Scene {
     scene: THREE.Scene;
-    camera: THREE.PerspectiveCamera;
+    camera: THREE.OrthographicCamera;
     renderer: THREE.WebGLRenderer;
 
     constructor(width: number, height: number, backgroundColor?: string, ambientLightColor?: string, directionalLightColor?: string, cameraPosition?: string) {

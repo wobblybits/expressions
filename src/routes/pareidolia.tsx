@@ -1,8 +1,8 @@
 import { Component, lazy } from 'solid-js';
 import ClientOnly from '../lib/ClientOnly';
-import PageLayout from '../components/PageLayout';
+import PageLayout from '../components/ui/PageLayout';
 
-const PareidoliaPage = lazy(() => import('../pages/PareidoliaPage'));
+const PareidoliaPage = lazy(() => import('../features/pareidolia/pages/PareidoliaPage'));
 
 const Pareidolia: Component = () => {
   return (
@@ -26,5 +26,8 @@ const Pareidolia: Component = () => {
     </PageLayout>
   );
 };
+
+// @ts-ignore
+Pareidolia.ssr = false;
 
 export default Pareidolia; 

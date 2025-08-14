@@ -5,13 +5,15 @@
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "allowImportingTsExtensions": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
+    "allowJs": true,
+    // "strict": true,
     "noEmit": true,
+    "types": ["vinxi/types/client"],
     "isolatedModules": true,
-    "skipLibCheck": true,
-    "types": [],
-    "resolveJsonModule": true
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   }
 }

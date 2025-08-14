@@ -1,8 +1,8 @@
 import { Component, lazy } from 'solid-js';
 import ClientOnly from '../lib/ClientOnly';
-import PageLayout from '../components/PageLayout';
+import PageLayout from '../components/ui/PageLayout';
 
-const GamePage = lazy(() => import('../pages/GamePage'));
+const GamePage = lazy(() => import('../features/emotions/pages/GamePage'));
 
 const Game: Component = () => {
   return (
@@ -26,5 +26,8 @@ const Game: Component = () => {
     </PageLayout>
   );
 };
+
+// @ts-ignore
+Game.ssr = false;
 
 export default Game; 

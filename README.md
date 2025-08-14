@@ -1,3 +1,5 @@
+[![deploy](https://github.com/wobblybits/pareidolia/actions/workflows/deploy.yml/badge.svg)](https://github.com/wobblybits/pareidolia/actions/workflows/deploy.yml)
+
 ## Usage
 
 Those templates dependencies are maintained via [pnpm](https://pnpm.io) via `pnpm up -Lri`.
