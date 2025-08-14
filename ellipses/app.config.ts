@@ -1,12 +1,9 @@
 import { defineConfig } from "@solidjs/start/config";
 
 export default defineConfig({
-  ssr: process.env.NODE_ENV === "production",
+  ssr: false,
   server: process.env.NODE_ENV === "production" ? {
     preset: "static",
-    prerender: {
-      routes: ["/", "/about", "/game", "/composite", "/pareidolia"], // Keep all routes
-      crawlLinks: false
-    }
+    baseURL: "/pareidolia/", // GitHub Pages subdirectory
   } : undefined,
 }); 
