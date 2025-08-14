@@ -232,7 +232,7 @@ const Game: Component<{ id: string, width: number, height: number, expressionMod
 
     return (
       <div id="game-container" style={{position: "relative", "text-align": "center", width: "100%", height: "calc(100% - 2em)", padding: "1em", display: "flex", "flex-direction": "row", "align-items": "center", "justify-content": "center"}}>
-        <div id={props.id} class='game' style={{width: props.width + "px", height: props.height + "px", position: "relative"}}>
+        <div id={props.id} class='game pixelated-border' style={{width: props.width + "px", height: props.height + "px", position: "relative"}}>
             {scene.renderer.domElement}
             <div class="halftone"></div>
             <div id="loading">Loading...</div>

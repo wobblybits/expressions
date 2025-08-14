@@ -20,22 +20,21 @@ const Navigation: Component = () => {
   
   return (
     <nav class="p-4 bg-gray-700">
-      <ul class="flex flex-wrap gap-4">
+      <ul class="flex flex-wrap gap-4 flex-row">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <li>
-              <a 
-                href={item.path} 
+              <input type="button" 
+                onClick={() => window.location.href = item.path} 
                 class={`block px-3 py-2 rounded transition-colors ${
                   isActive 
-                    ? 'bg-blue-600 text-white font-bold' 
-                    : 'text-blue-400 hover:text-blue-300 hover:bg-gray-600'
+                    ? ('grid-background') 
+                    : ('')
                 }`}
                 title={item.description}
-              >
-                {item.label}
-              </a>
+                value={item.label}
+              />
             </li>
           );
         })}

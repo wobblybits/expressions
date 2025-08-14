@@ -60,7 +60,7 @@ const Actor: Component<{ id: string, width: number, height: number, expressionMo
             const pupil = expression.children[i];
             pupil.position.set(pupil.position.x, pupil.position.y + rotation[0] * .4, pupil.position.z - Math.abs(rotation[1]) * .12 + Math.abs(rotation[0]) * .1);
         }
-        expression.rotation.set(...rotation);
+        expression.rotation.set(rotation[0], rotation[1], rotation[2]);
         scene.add(expression);
         scene.render();
     }
@@ -95,7 +95,7 @@ const Actor: Component<{ id: string, width: number, height: number, expressionMo
     draw();
 
     return (
-      <div id={props.id} class='face' style={{width: props.width + "px", height: props.height + "px"}} onMouseDown={() => update(randomExpression(), [0, Math.random() - .5, 0])}>
+      <div id={props.id} class='face pixelated-border' style={{width: props.width + "px", height: props.height + "px"}} onMouseDown={() => update(randomExpression(), [0, Math.random() - .5, 0])}>
         {scene.renderer.domElement}
         <div class="halftone"></div>
       </div>

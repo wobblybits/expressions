@@ -11,13 +11,13 @@ const Controls: Component<{title: string, emotionModel: EmotionModel, callback: 
 
     return (
         <div style={{display: "flex", "flex-direction": "column", "align-items": "center", "justify-content": "center", "width": "300px" }}>
-            <h1>{props.title}</h1>
-            <div id="controls">
+            <h1 class="pixelated-text">{props.title}</h1>
+            <div id="controls" class="pixelated-border">
                 <h4>Expression</h4>
                 <Face id="face" width={140} height={140} expressionModel={new ExpressionModel(props.emotionModel)} emotionLevels={displayEmotionLevels}/>
                 <For each={Object.keys(NoEmotion)}>
                     {(key) => 
-                        <div id="emotion-sliders"style={{display: "flex", "align-items": "center", gap: "10px"}}>
+                        <div id="emotion-sliders" style={{display: "flex", "align-items": "center", gap: "10px"}}>
                             <input type="range" min="-100" max="100" value={displayEmotionLevels()[key as keyof EmotionLevels]} oninput={(e) => {
                                 const currentEmotions = displayEmotionLevels();
                                 const newEmotions = {...currentEmotions, [key]: parseInt(e.target.value)};

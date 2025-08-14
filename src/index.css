@@ -1,238 +1,405 @@
 @import 'tailwindcss';
 
+/* ===== CSS CUSTOM PROPERTIES ===== */
+:root {
+  /* Grid and Layout */
+  --grid-size: 4px;
+  --grid-line: 1px;
+  --grid-gap: 8px;
+  
+  /* Colors */
+  --border-color: #000;
+  --background-color: #fff;
+  --accent-color: lightblue;
+  --text-color: #000;
+  --text-light: #fff;
+  
+  /* Shadows and Effects */
+  --shadow-offset: 3px;
+  --shadow-offset-large: 7px;
+  --shadow-offset-xl: 8px;
+  --shadow-color: #000;
+  --shadow-light: #fff;
+  --shadow-gray: gray;
+  
+  /* Halftone Effects */
+  --halftone-size: 3px;
+  --halftone-bleed: 0.41;
+  --halftone-rotation: 360deg;
+  
+  /* Typography */
+  --font-mono: monospace;
+  --font-size-base: 1em;
+  --font-size-large: 1.2em;
+  --font-size-xl: 1.5em;
+  
+  /* Spacing */
+  --spacing-xs: 0.25em;
+  --spacing-sm: 0.5em;
+  --spacing-md: 1em;
+  --spacing-lg: 1.5em;
+  
+  /* Component Sizes */
+  --title-width: 256px;
+  --range-width: 100px;
+  --range-height: 10px;
+  --thumb-size: 10px;
+
+  /* Backgrounds */
+  --grid-background: linear-gradient(
+    to right, 
+    var(--border-color) 0px, 
+    var(--border-color) var(--grid-line), 
+    transparent var(--grid-line), 
+    transparent calc(var(--grid-line) * 2)
+  ), 
+  linear-gradient(
+    to top, 
+    var(--border-color) 0px, 
+    var(--border-color) var(--grid-line), 
+    transparent var(--grid-line), 
+    transparent calc(var(--grid-line) * 2)
+  );
+  --grid-background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
+
+  --text-outline-black: 
+    -1px -1px 0px var(--shadow-color),
+    1px -1px 0px var(--shadow-color),
+    -1px 1px 0px var(--shadow-color),
+    1px 1px 0px var(--shadow-color);
+}
+
+* {
+    box-sizing: content-box;
+}
+
+/* ===== LAYOUT & GRID ===== */
 body {
-    background: linear-gradient(45deg, transparent 0, transparent calc(50% - 1px), white calc(50% - 1px), white calc(50% + 1px), transparent calc(50% + 1px), transparent 1px, transparent 2px) lightblue;
-    background-size: 4px 8px, 100%;
+  background: linear-gradient(
+    45deg, 
+    transparent 0, 
+    transparent calc(50% - var(--grid-line)), 
+    var(--background-color) calc(50% - var(--grid-line)), 
+    var(--background-color) calc(50% + var(--grid-line)), 
+    transparent calc(50% + var(--grid-line)), 
+    transparent 1px, 
+    transparent 2px
+  ) var(--accent-color);
+  background-size: var(--grid-size) var(--grid-gap), 100%;
 }
 
 #grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0px;
-}
-
-canvas, img {
-    image-rendering: pixelated;
-    background: white;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
 }
 
 #game-container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 1em;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
 }
 
+/* ===== UTILITY CLASSES ===== */
+.pixelated-border {
+  border: 1px solid var(--border-color);
+  background: var(--background-color);
+}
+
+.grid-background {
+  background: linear-gradient(
+    to right, 
+    var(--border-color) 0px, 
+    var(--border-color) var(--grid-line), 
+    transparent var(--grid-line), 
+    transparent calc(var(--grid-line) * 2)
+  ), 
+  linear-gradient(
+    to top, 
+    var(--border-color) 0px, 
+    var(--border-color) var(--grid-line), 
+    transparent var(--grid-line), 
+    transparent calc(var(--grid-line) * 2)
+  );
+  background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
+}
+
+.pixelated-text {
+  font-family: var(--font-mono);
+  text-shadow: var(--text-outline-black);
+}
+
+/* ===== COMPONENTS ===== */
+/* Canvas and Images */
+canvas, img {
+  image-rendering: pixelated;
+  background: var(--background-color);
+}
+
+/* Face and Game Components */
 .face, .game {
-    position: relative;
-    overflow: hidden;
-    filter: brightness(.68) blur(0.3px) contrast(3);
-    background: white;
+  position: relative;
+  overflow: hidden;
+  filter: brightness(0.68) blur(0.3px) contrast(3);
+  background: var(--background-color);
 }
 
-.game {
-    border: 1px solid black;
-}
-
-.halftone{
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-    opacity: .9;
-    pointer-events: none;
-    touch-action: none;
-}
-
-/* adapted from https://leanrada.com/notes/pure-css-halftone/ */
-.halftone:before, .halftone:after {
-    --halftone-size: 3px;
-    --halftone-bleed: 0.41;
-    --halftone-rotation: 360deg;
-    --halftone-dot-size: calc(var(--halftone-size) * var(--halftone-bleed));
-    --halftone-color-dot-size: var(--halftone-dot-size);
-    inset: 0;
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-blend-mode: multiply;
-    mix-blend-mode: multiply;
-    background-size: var(--halftone-size) var(--halftone-size);
+.face img {
+    object-fit: contain;
+    max-width: 100%;
+    max-height: 100%;
     image-rendering: pixelated;
-    pointer-events: none;
-    touch-action: none;
 }
 
-.halftone:after {
-    background-image: radial-gradient(var(--halftone-color-dot-size) at 75% 25%, #f0f, #f6f, #fff), radial-gradient(var(--halftone-color-dot-size) at 25% 75%, #f0f, #f6f, #fff), radial-gradient(var(--halftone-color-dot-size) at 75% 75%, #0ff, #6ff, #fff), radial-gradient(var(--halftone-color-dot-size) at 25% 25%, #0ff, #6ff, #fff);
-    /* transform: rotate(calc(-10deg + var(--halftone-rotation))) translateX(calc(var(--halftone-size) * 0.58)); */
-}
-
-.halftone:before {
-    background-image: radial-gradient(var(--halftone-dot-size) at 25% 75%, #000, #666, #fff), radial-gradient(var(--halftone-color-dot-size) at 75% 25%, #000, #666, #fff), radial-gradient(var(--halftone-color-dot-size) at 25% 25%, #ff0, #ff6, #fff), radial-gradient(var(--halftone-color-dot-size) at 75% 75%, #ff0, #ff6, #fff);
-    /* transform: rotate(calc(10deg + var(--halftone-rotation))) translateX(calc(var(--halftone-size) * 0.58)); */
-}
-
+/* Loading Component */
 #loading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border: 1px solid black;
-    background: white;
-    padding: 0 1em;
-    box-shadow: -7px 7px 0px gray, -8px 8px 0px black;
-    mix-blend-mode: normal;
-    font-family: monospace;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0 var(--spacing-md);
+  font-family: var(--font-mono);
+  box-shadow: calc(-1 * var(--shadow-offset-xl)) var(--shadow-offset-xl) 0px var(--shadow-color);
+  border:1px solid var(--border-color);
 }
 
+/* Controls Component */
 #controls {
-    /* position: absolute;
-    top: 0;
-    right: 0; */
-    position: relative;
-    margin: auto;
-    padding: 1em;
-    border: 1px solid black;
-    background: white;
-    font-family: monospace;
-    text-align: center;
+  position: relative;
+  margin: auto;
+  padding: var(--spacing-md);
+  font-family: var(--font-mono);
+  text-align: center;
+  background: var(--background-color);
 }
 
 #controls h4 {
-    text-align: center;
-    text-decoration: underline;
-    margin-bottom: 0.5em;
-    margin-top: 0.5em;
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #000;
-    text-shadow: 0 0 10px #fff;
+  text-align: center;
+  text-decoration: underline;
+  margin: var(--spacing-sm) 0;
+  font-size: var(--font-size-large);
+  font-weight: bold;
+  color: var(--text-color);
+  text-shadow: 0 0 10px var(--background-color);
 }
 
 #controls #face {
-    margin: auto;
+  margin: auto;
+  border: none;
 }
 
-#controls:before {
-    content: "";
-    position: absolute;
-    top: 10px;
-    left: -10px;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to right, #000 0px, #000 1px, transparent 1px, transparent 2px), linear-gradient(to top, #000 0px, #000 1px, transparent 1px, transparent 2px);
-    background-size: 2px 2px;
-    z-index: -1;
+#controls::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: -10px;
+  width: 100%;
+  height: 100%;
+  background: var(--grid-background);
+  background-size: var(--grid-background-size);
+  z-index: -1;
 }
 
-#controls input[type="button"] {
-    align-items: center;
-    justify-content: center;
-    background: white;
-    border: 1px solid black;
-    border-radius: 0px;
-    appearance: none;
-    -webkit-appearance: none;
-    margin: .5em 4px;
-    padding: 0px 0.5em;
-    align-self: center;
-    cursor: pointer;
-    margin-bottom: .25em;
+/* Button Controls */
+input[type="button"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  margin: var(--spacing-sm) 4px var(--spacing-xs);
+  padding: 0 var(--spacing-sm);
+  cursor: pointer;
 }
 
-#controls input[type="button"]:hover {
-    background: linear-gradient(to right, #000 0px, #000 1px, transparent 1px, transparent 2px), linear-gradient(to top, #000 0px, #000 1px, transparent 1px, transparent 2px);
-    background-size: 2px 2px;
-    background-position: 1px 0, 1px .5px;
-    color: white;
-    font-weight: bold;
-    text-shadow: -.5px -.5px 0px black, .5px -.5px 0px black, -.5px .5px 0px black, .5px .5px 0px black;
-    box-shadow: -3px 3px 0px white, -4px 4px 0px black;
-    border: 1px solid transparent;
+input[type="button"]:hover,
+input[type="button"]:focus {
+  background: var(--grid-background);
+  background-size: var(--grid-background-size);
+  background-position: 1px 0, 1px 0.5px;
+  color: var(--text-light);
+  font-weight: bold;
+  text-shadow: var(--text-outline-black);
+  box-shadow: 
+    calc(-1 * var(--shadow-offset)) var(--shadow-offset) 0px var(--shadow-light),
+    calc(-1 * calc(var(--shadow-offset) + 1px)) calc(var(--shadow-offset) + 1px) 0px var(--shadow-color);
+  border: 1px solid transparent;
 }
 
+input[type="button"]:focus-visible {
+  outline: 2px solid var(--border-color);
+  outline-offset: 2px;
+}
+
+/* Range Controls */
 #controls input[type="range"] {
-    width: 100px;
-    height: 10px;
-    background: white;
-    border: 1px solid black;
-    border-radius: 0px;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    outline: none;
+  width: var(--range-width);
+  height: var(--range-height);
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
 }
 
 #controls input[type="range"]::-webkit-slider-thumb {
-    width: 10px;
-    height: 10px;
-    background: linear-gradient(to right, #000 0px, #000 1px, transparent 1px, transparent 2px), linear-gradient(to top, #000 0px, #000 1px, transparent 1px, transparent 2px);
-    background-size: 2px 2px;
-    background-position: 1px 0, 0 .5px;
-    border: none;
-    border-radius: 0px;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    outline: none;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  background: var(--grid-background);
+  background-size: var(--grid-background-size);
+  background-position: 1px 0, 0 0.5px;
+  border: none;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+  cursor: pointer;
 }
 
+#controls input[type="range"]::-moz-range-thumb {
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  background: var(--grid-background);
+  background-size: var(--grid-background-size);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+/* Typography */
 h1 {
-    position: relative;
-    margin: 0;
-    width: 256px;
-    text-align: center;
-    font-size: 1.5em;
-    color: white;
-    padding: 0.5em;
-    font-weight: bold;
-    /* border: 1px solid black; */
-    background: linear-gradient(to right, #000 0px, #000 1px, transparent 1px, transparent 2px), linear-gradient(to top, #000 0px, #000 1px, transparent 1px, transparent 2px);
-    background-size: 2px 2px;
-    font-family: monospace;
-    margin: -1em auto 1em;
-    
-    text-shadow: -.5px -.5px 0px black, .5px -.5px 0px black, -.5px .5px 0px black, .5px .5px 0px black;
-
+  position: relative;
+  margin: calc(-1 * var(--spacing-md)) auto var(--spacing-md);
+  width: var(--title-width);
+  text-align: center;
+  font-size: var(--font-size-xl);
+  color: var(--text-light);
+  padding: var(--spacing-sm);
+  font-weight: bold;
+  font-family: var(--font-mono);
+  background: var(--grid-background);
+  background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
 }
 
-/* #pareidolia {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-} */
-
-#pareidolia canvas, #pareidolia svg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+/* ===== EFFECTS & FILTERS ===== */
+/* Halftone Effect - adapted from https://leanrada.com/notes/pure-css-halftone/ */
+.halftone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+  pointer-events: none;
+  touch-action: none;
 }
 
-#pareidolia canvas {
+.halftone::before,
+.halftone::after {
+  --halftone-dot-size: calc(var(--halftone-size) * var(--halftone-bleed));
+  --halftone-color-dot-size: var(--halftone-dot-size);
+  
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-blend-mode: multiply;
+  mix-blend-mode: multiply;
+  background-size: var(--halftone-size) var(--halftone-size);
+  image-rendering: pixelated;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.halftone::after {
+  background-image: 
+    radial-gradient(var(--halftone-color-dot-size) at 75% 25%, #f0f, #f6f, #fff),
+    radial-gradient(var(--halftone-color-dot-size) at 25% 75%, #f0f, #f6f, #fff),
+    radial-gradient(var(--halftone-color-dot-size) at 75% 75%, #0ff, #6ff, #fff),
+    radial-gradient(var(--halftone-color-dot-size) at 25% 25%, #0ff, #6ff, #fff);
+}
+
+.halftone::before {
+  background-image: 
+    radial-gradient(var(--halftone-dot-size) at 25% 75%, #000, #666, #fff),
+    radial-gradient(var(--halftone-color-dot-size) at 75% 25%, #000, #666, #fff),
+    radial-gradient(var(--halftone-color-dot-size) at 25% 25%, #ff0, #ff6, #fff),
+    radial-gradient(var(--halftone-color-dot-size) at 75% 75%, #ff0, #ff6, #fff);
+}
+
+/* ===== INTERACTIVE COMPONENTS ===== */
+/* Pareidolia Components */
+#pareidolia canvas,
+#pareidolia svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 #pareidolia svg {
-    z-index: 100;
+  z-index: 100;
 }
 
 #pareidolia svg circle:hover {
-    stroke: purple;
-    fill: purple;
-    opacity: .5;
-    r: 3;
+  stroke: purple;
+  fill: purple;
+  opacity: 0.5;
+  r: 3;
 }
 
+/* Face SVG Components */
 #face-svg circle {
-    cursor: pointer;
-    filter: drop-shadow(0 0 4px yellow) drop-shadow(0 0 8px yellow) drop-shadow(0 0 2px yellow);
+  cursor: pointer;
+  filter: 
+    drop-shadow(0 0 4px yellow) 
+    drop-shadow(0 0 8px yellow) 
+    drop-shadow(0 0 2px yellow);
+}
+
+#face-svg circle:hover {
+  filter: 
+    drop-shadow(0 0 6px yellow) 
+    drop-shadow(0 0 12px yellow) 
+    drop-shadow(0 0 4px yellow);
+}
+
+#face-svg circle:focus-visible {
+  outline: 2px solid yellow;
+  outline-offset: 2px;
+}
+
+.grid-label h4 {
+    background: var(--grid-background);
+    background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
+    padding: var(--spacing-xs);
+    text-align: center;
+    font-size: var(--font-size-base);
+    font-weight: bold;
+    color: var(--text-light);
+    font-family: var(--font-mono);
+    text-shadow: var(--text-outline-black);
+}
+
+table td {
+    overflow: hidden;
+    position: relative;
+}
+
+table td h4 {
+    transform: rotate(-90deg) translate(0%,-50%);
+    box-sizing: content-box;
+    margin-left: calc(50% - 3px);
+    width: 100%;
+    transform-origin: center;
 }

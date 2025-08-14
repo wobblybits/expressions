@@ -7,8 +7,8 @@ import { createEffect, createSignal } from 'solid-js';
 import EmotionModel from '../../../features/emotions/lib/EmotionModel';
 import ClientOnly from '../../../lib/ClientOnly';
 
-const Face: Component<{ id: string, width: number, height: number, expressionModel?: ExpressionModel, emotionLevels?: EmotionLevels | number[] | (() => EmotionLevels), rotation?: number[] }> = (props) => {
-    const scene = new Scene(props.width, props.height);
+const Face: Component<{ id: string, width: number, height: number, expressionModel?: ExpressionModel, emotionLevels?: EmotionLevels | number[] | (() => EmotionLevels), rotation?: number[], scene?: Scene }> = (props) => {
+    const scene = props.scene || new Scene(props.width, props.height);
     scene.renderer.setPixelRatio(1);
     const expressionModel = props.expressionModel || new ExpressionModel(new EmotionModel());
     let expression: THREE.Object3D | undefined;
@@ -21,10 +21,9 @@ const Face: Component<{ id: string, width: number, height: number, expressionMod
 
     const draw = (facialExpression: EmotionLevels) => {
       const expression = expressionModel.getExpression(facialExpression);
-
       scene.add(expression);
       scene.render();
-      
+      expression.remove(scene.scene);
       // const bbox = new THREE.Box3().setFromObject(expression);
       // const min = (new THREE.Vector3(0, bbox.min.y, 0).project(scene.camera).y);
       // const max = (new THREE.Vector3(0, bbox.max.y, 0).project(scene.camera).y);
@@ -41,8 +40,9 @@ const Face: Component<{ id: string, width: number, height: number, expressionMod
 
     return (
       <ClientOnly fallback={<div style={{ width: props.width + 'px', height: props.height + 'px', background: '#333' }}></div>}>
-        <div id={props.id} class='face' style={{ width: props.width + 'px', height: props.height + 'px' }}>
+        <div id={props.id} class='face' style={{margin: 'auto'}}>
           <img src={imageSrc()} alt="Face" style={{ width: '100%', height: '100%' }} />
+          <div class='halftone'></div>
         </div>
       </ClientOnly>
     );

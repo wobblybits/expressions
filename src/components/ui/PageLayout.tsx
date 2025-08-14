@@ -13,20 +13,11 @@ const PageLayout: Component<PageLayoutProps> = (props) => {
     <ClientOnly 
       fallback={
         <div class="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-          <div>Loading...</div>
+          <div id='loading'>Loading...</div>
         </div>
       }
     >
       <div class="min-h-screen bg-gray-900 text-white">
-        <header class="p-4 bg-gray-800">
-          <h1 class="text-2xl font-bold">{props.title}</h1>
-          {props.description && (
-            <p class="text-gray-300">{props.description}</p>
-          )}
-        </header>
-        
-        <Navigation />
-        
         <main>
           {props.children}
         </main>
