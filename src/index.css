@@ -1,4 +1,6 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ===== CSS CUSTOM PROPERTIES ===== */
 :root {
@@ -86,6 +88,7 @@ body {
     transparent 2px
   ) var(--accent-color);
   background-size: var(--grid-size) var(--grid-gap), 100%;
+  font-family: var(--font-mono);
 }
 
 #grid {
@@ -163,6 +166,7 @@ canvas, img {
   font-family: var(--font-mono);
   box-shadow: calc(-1 * var(--shadow-offset-xl)) var(--shadow-offset-xl) 0px var(--shadow-color);
   border:1px solid var(--border-color);
+  background: var(--background-color);
 }
 
 /* Controls Component */
@@ -379,27 +383,50 @@ h1 {
   outline-offset: 2px;
 }
 
+.grid-label:nth-child(1) {
+    background: none;
+}
+
+.grid-label {
+    /* height: 100%; */
+    width: 100%;
+    overflow: hidden;
+    vertical-align: middle;
+    text-align: center;
+    height: 100%;
+}
+
 .grid-label h4 {
-    background: var(--grid-background);
-    background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
     padding: var(--spacing-xs);
     text-align: center;
     font-size: var(--font-size-base);
-    font-weight: bold;
+    font-weight: 600;
     color: var(--text-light);
     font-family: var(--font-mono);
     text-shadow: var(--text-outline-black);
-}
-
-table td {
-    overflow: hidden;
-    position: relative;
-}
-
-table td h4 {
-    transform: rotate(-90deg) translate(0%,-50%);
-    box-sizing: content-box;
-    margin-left: calc(50% - 3px);
     width: 100%;
-    transform-origin: center;
+    margin-left: -3px;
+    background: var(--grid-background);
+    background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
+}
+
+.grid-label:nth-child(n+10) {
+    position: relative;
+    width: calc(1em + 3 * var(--spacing-xs));
+}
+
+.grid-label:nth-child(n+10) h4 {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    writing-mode: vertical-rl;
+    transform: translate(-25%, -50%) rotate(180deg);
+    height: 100%;
+    text-orientation: mixed;
+}
+
+#composite-grid .face {
+   width: auto !important;
+   height: auto !important;
+   margin-top: 2px !important;
 }

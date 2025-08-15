@@ -12,12 +12,12 @@ const PageLayout: Component<PageLayoutProps> = (props) => {
   return (
     <ClientOnly 
       fallback={
-        <div class="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div class="min-h-screen flex items-center justify-center">
           <div id='loading'>Loading...</div>
         </div>
       }
     >
-      <div class="min-h-screen bg-gray-900 text-white">
+      <div class="min-h-screen">
         <main>
           {props.children}
         </main>

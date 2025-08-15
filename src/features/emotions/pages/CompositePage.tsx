@@ -32,6 +32,7 @@ const CompositePage: Component = () => {
   
   // Watch for completed faces and start the next one
   createEffect(() => {
+    console.log('effect');
     const completed = completedFaces();
     const rendering = renderingFaces();
     
@@ -87,30 +88,33 @@ const CompositePage: Component = () => {
   
   return (
     <div style={{
-      width: '100vw',
-      height: '100vh',
+      width: '90vw',
+      height: '95vh',
       display: 'flex',
       'align-items': 'center',
       'justify-content': 'center',
-      'padding': '20px',
+      'padding': '2em',
       'box-sizing': 'border-box'
     }}>
       <ClientOnly fallback={<div id='loading'></div>}>
         <div style={{
           'max-width': '100%',
           'max-height': '100%',
-          'overflow': 'hidden'
+          'aspect-ratio': '1 / 1',
+          'object-fit': 'contain',
+          'margin-top': '2em'
         }}>
-          <div style={{
+          <div id='composite-grid' style={{
             display: 'grid',
             'grid-template-columns': 'auto repeat(8, 1fr)',
             'grid-template-rows': 'auto repeat(8, 1fr)',
             gap: '2px',
             'align-items': 'center',
-            'justify-items': 'center'
+            'justify-items': 'center',
+            'object-fit': 'contain'
           }}>
             {/* Header row */}
-            <div></div>
+            <div class='grid-label'></div>
             <For each={Object.keys(NoEmotion)}>
               { (column, columnIndex) => 
                 <div class='grid-label'>
@@ -130,11 +134,16 @@ const CompositePage: Component = () => {
                       <div style={{
                         'background': 'white', 
                         'border': '1px solid black',
-                        width: '9vw',
-                        height: '9vw',
+                        'min-width': '4em',
+                        'min-height': '4em',
+                        width: 'auto',
+                        height: 'auto',
                         display: 'flex',
                         'align-items': 'center',
-                        'justify-content': 'center'
+                        'justify-content': 'center',
+                        'object-fit': 'contain',
+                        overflow: 'hidden',
+                        'aspect-ratio': '1 / 1'
                       }}>
                         {renderingFaces().has(`face${rowIndex()}-${columnIndex()}`) ? (
                           <Face 

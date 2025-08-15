@@ -40,7 +40,7 @@ const Face: Component<{ id: string, width: number, height: number, expressionMod
 
     return (
       <ClientOnly fallback={<div style={{ width: props.width + 'px', height: props.height + 'px', background: '#333' }}></div>}>
-        <div id={props.id} class='face' style={{margin: 'auto'}}>
+        <div id={props.id} class='face' style={{width: props.width + 'px', height: props.height + 'px', margin: 'auto'}}>
           <img src={imageSrc()} alt="Face" style={{ width: '100%', height: '100%' }} />
           <div class='halftone'></div>
         </div>

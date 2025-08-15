@@ -7,7 +7,7 @@ const App: Component = () => {
   return (
     <Router
       root={props => (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div id='loading'>Loading...</div>}>
           {props.children}
         </Suspense>
       )}

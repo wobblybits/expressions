@@ -10,7 +10,7 @@ const ClientOnly: Component<ClientOnlyProps> = (props) => {
   return (
     <Show 
       when={!isServer} 
-      fallback={props.fallback || <div class="loading-placeholder">Loading interactive content...</div>}
+      fallback={props.fallback || <div id='loading'>Loading interactive content...</div>}
     >
       {props.children}
     </Show>
