@@ -1,6 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@config "./tailwind.config.js";
+
+@theme {
+  /* Add any custom theme values here if needed */
+}
 
 /* ===== CSS CUSTOM PROPERTIES ===== */
 :root {
@@ -429,4 +433,8 @@ h1 {
    width: auto !important;
    height: auto !important;
    margin-top: 2px !important;
+}
+
+p {
+    background: white;
 }
