@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@config "../tailwind.config.js";
-
 @theme {
   /* Add any custom theme values here if needed */
 }
@@ -12,14 +10,14 @@
   --grid-size: 4px;
   --grid-line: 1px;
   --grid-gap: 8px;
-  
+
   /* Colors */
   --border-color: #000;
   --background-color: #fff;
   --accent-color: lightblue;
   --text-color: #000;
   --text-light: #fff;
-  
+
   /* Shadows and Effects */
   --shadow-offset: 3px;
   --shadow-offset-large: 7px;
@@ -27,24 +25,24 @@
   --shadow-color: #000;
   --shadow-light: #fff;
   --shadow-gray: gray;
-  
+
   /* Halftone Effects */
   --halftone-size: 3px;
   --halftone-bleed: 0.41;
   --halftone-rotation: 360deg;
-  
+
   /* Typography */
   --font-mono: monospace;
   --font-size-base: 1em;
   --font-size-large: 1.2em;
   --font-size-xl: 1.5em;
-  
+
   /* Spacing */
   --spacing-xs: 0.25em;
   --spacing-sm: 0.5em;
   --spacing-md: 1em;
   --spacing-lg: 1.5em;
-  
+
   /* Component Sizes */
   --title-width: 256px;
   --range-width: 100px;
@@ -53,44 +51,43 @@
 
   /* Backgrounds */
   --grid-background: linear-gradient(
-    to right, 
-    var(--border-color) 0px, 
-    var(--border-color) var(--grid-line), 
-    transparent var(--grid-line), 
-    transparent calc(var(--grid-line) * 2)
-  ), 
-  linear-gradient(
-    to top, 
-    var(--border-color) 0px, 
-    var(--border-color) var(--grid-line), 
-    transparent var(--grid-line), 
-    transparent calc(var(--grid-line) * 2)
-  );
+      to right,
+      var(--border-color) 0px,
+      var(--border-color) var(--grid-line),
+      transparent var(--grid-line),
+      transparent calc(var(--grid-line) * 2)
+    ),
+    linear-gradient(
+      to top,
+      var(--border-color) 0px,
+      var(--border-color) var(--grid-line),
+      transparent var(--grid-line),
+      transparent calc(var(--grid-line) * 2)
+    );
   --grid-background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
 
-  --text-outline-black: 
-    -1px -1px 0px var(--shadow-color),
-    1px -1px 0px var(--shadow-color),
-    -1px 1px 0px var(--shadow-color),
+  --text-outline-black: -1px -1px 0px var(--shadow-color),
+    1px -1px 0px var(--shadow-color), -1px 1px 0px var(--shadow-color),
     1px 1px 0px var(--shadow-color);
 }
 
 * {
-    box-sizing: content-box;
+  box-sizing: content-box;
 }
 
 /* ===== LAYOUT & GRID ===== */
 body {
   background: linear-gradient(
-    45deg, 
-    transparent 0, 
-    transparent calc(50% - var(--grid-line)), 
-    var(--background-color) calc(50% - var(--grid-line)), 
-    var(--background-color) calc(50% + var(--grid-line)), 
-    transparent calc(50% + var(--grid-line)), 
-    transparent 1px, 
-    transparent 2px
-  ) var(--accent-color);
+      45deg,
+      transparent 0,
+      transparent calc(50% - var(--grid-line)),
+      var(--background-color) calc(50% - var(--grid-line)),
+      var(--background-color) calc(50% + var(--grid-line)),
+      transparent calc(50% + var(--grid-line)),
+      transparent 1px,
+      transparent 2px
+    )
+    var(--accent-color);
   background-size: var(--grid-size) var(--grid-gap), 100%;
   font-family: var(--font-mono);
 }
@@ -117,19 +114,19 @@ body {
 
 .grid-background {
   background: linear-gradient(
-    to right, 
-    var(--border-color) 0px, 
-    var(--border-color) var(--grid-line), 
-    transparent var(--grid-line), 
-    transparent calc(var(--grid-line) * 2)
-  ), 
-  linear-gradient(
-    to top, 
-    var(--border-color) 0px, 
-    var(--border-color) var(--grid-line), 
-    transparent var(--grid-line), 
-    transparent calc(var(--grid-line) * 2)
-  );
+      to right,
+      var(--border-color) 0px,
+      var(--border-color) var(--grid-line),
+      transparent var(--grid-line),
+      transparent calc(var(--grid-line) * 2)
+    ),
+    linear-gradient(
+      to top,
+      var(--border-color) 0px,
+      var(--border-color) var(--grid-line),
+      transparent var(--grid-line),
+      transparent calc(var(--grid-line) * 2)
+    );
   background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
 }
 
@@ -140,13 +137,15 @@ body {
 
 /* ===== COMPONENTS ===== */
 /* Canvas and Images */
-canvas, img {
+canvas,
+img {
   image-rendering: pixelated;
   background: var(--background-color);
 }
 
 /* Face and Game Components */
-.face, .game {
+.face,
+.game {
   position: relative;
   overflow: hidden;
   filter: brightness(0.68) blur(0.3px) contrast(3);
@@ -154,10 +153,10 @@ canvas, img {
 }
 
 .face img {
-    object-fit: contain;
-    max-width: 100%;
-    max-height: 100%;
-    image-rendering: pixelated;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+  image-rendering: pixelated;
 }
 
 /* Loading Component */
@@ -168,8 +167,9 @@ canvas, img {
   transform: translate(-50%, -50%);
   padding: 0 var(--spacing-md);
   font-family: var(--font-mono);
-  box-shadow: calc(-1 * var(--shadow-offset-xl)) var(--shadow-offset-xl) 0px var(--shadow-color);
-  border:1px solid var(--border-color);
+  box-shadow: calc(-1 * var(--shadow-offset-xl)) var(--shadow-offset-xl) 0px
+    var(--shadow-color);
+  border: 1px solid var(--border-color);
   background: var(--background-color);
 }
 
@@ -233,9 +233,10 @@ input[type="button"]:focus {
   color: var(--text-light);
   font-weight: bold;
   text-shadow: var(--text-outline-black);
-  box-shadow: 
-    calc(-1 * var(--shadow-offset)) var(--shadow-offset) 0px var(--shadow-light),
-    calc(-1 * calc(var(--shadow-offset) + 1px)) calc(var(--shadow-offset) + 1px) 0px var(--shadow-color);
+  box-shadow: calc(-1 * var(--shadow-offset)) var(--shadow-offset) 0px
+      var(--shadow-light),
+    calc(-1 * calc(var(--shadow-offset) + 1px)) calc(var(--shadow-offset) + 1px)
+      0px var(--shadow-color);
   border: 1px solid transparent;
 }
 
@@ -315,7 +316,7 @@ h1 {
 .halftone::after {
   --halftone-dot-size: calc(var(--halftone-size) * var(--halftone-bleed));
   --halftone-color-dot-size: var(--halftone-dot-size);
-  
+
   content: "";
   position: absolute;
   inset: 0;
@@ -330,16 +331,24 @@ h1 {
 }
 
 .halftone::after {
-  background-image: 
-    radial-gradient(var(--halftone-color-dot-size) at 75% 25%, #f0f, #f6f, #fff),
+  background-image: radial-gradient(
+      var(--halftone-color-dot-size) at 75% 25%,
+      #f0f,
+      #f6f,
+      #fff
+    ),
     radial-gradient(var(--halftone-color-dot-size) at 25% 75%, #f0f, #f6f, #fff),
     radial-gradient(var(--halftone-color-dot-size) at 75% 75%, #0ff, #6ff, #fff),
     radial-gradient(var(--halftone-color-dot-size) at 25% 25%, #0ff, #6ff, #fff);
 }
 
 .halftone::before {
-  background-image: 
-    radial-gradient(var(--halftone-dot-size) at 25% 75%, #000, #666, #fff),
+  background-image: radial-gradient(
+      var(--halftone-dot-size) at 25% 75%,
+      #000,
+      #666,
+      #fff
+    ),
     radial-gradient(var(--halftone-color-dot-size) at 75% 25%, #000, #666, #fff),
     radial-gradient(var(--halftone-color-dot-size) at 25% 25%, #ff0, #ff6, #fff),
     radial-gradient(var(--halftone-color-dot-size) at 75% 75%, #ff0, #ff6, #fff);
@@ -369,16 +378,12 @@ h1 {
 /* Face SVG Components */
 #face-svg circle {
   cursor: pointer;
-  filter: 
-    drop-shadow(0 0 4px yellow) 
-    drop-shadow(0 0 8px yellow) 
+  filter: drop-shadow(0 0 4px yellow) drop-shadow(0 0 8px yellow)
     drop-shadow(0 0 2px yellow);
 }
 
 #face-svg circle:hover {
-  filter: 
-    drop-shadow(0 0 6px yellow) 
-    drop-shadow(0 0 12px yellow) 
+  filter: drop-shadow(0 0 6px yellow) drop-shadow(0 0 12px yellow)
     drop-shadow(0 0 4px yellow);
 }
 
@@ -388,53 +393,165 @@ h1 {
 }
 
 .grid-label:nth-child(1) {
-    background: none;
+  background: none;
 }
 
 .grid-label {
-    /* height: 100%; */
-    width: 100%;
-    overflow: hidden;
-    vertical-align: middle;
-    text-align: center;
-    height: 100%;
+  /* height: 100%; */
+  width: 100%;
+  overflow: hidden;
+  vertical-align: middle;
+  text-align: center;
+  height: 100%;
 }
 
 .grid-label h4 {
-    padding: var(--spacing-xs);
-    text-align: center;
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    color: var(--text-light);
-    font-family: var(--font-mono);
-    text-shadow: var(--text-outline-black);
-    width: 100%;
-    margin-left: -3px;
-    background: var(--grid-background);
-    background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
+  padding: var(--spacing-xs);
+  text-align: center;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-light);
+  font-family: var(--font-mono);
+  text-shadow: var(--text-outline-black);
+  width: 100%;
+  margin-left: -3px;
+  background: var(--grid-background);
+  background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
 }
 
-.grid-label:nth-child(n+10) {
-    position: relative;
-    width: calc(1em + 3 * var(--spacing-xs));
+.grid-label:nth-child(n + 10) {
+  position: relative;
+  width: calc(1em + 3 * var(--spacing-xs));
 }
 
-.grid-label:nth-child(n+10) h4 {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    writing-mode: vertical-rl;
-    transform: translate(-25%, -50%) rotate(180deg);
-    height: 100%;
-    text-orientation: mixed;
+.grid-label:nth-child(n + 10) h4 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  writing-mode: vertical-rl;
+  transform: translate(-25%, -50%) rotate(180deg);
+  height: 100%;
+  text-orientation: mixed;
 }
 
 #composite-grid .face {
-   width: auto !important;
-   height: auto !important;
-   margin-top: 2px !important;
+  width: auto !important;
+  height: auto !important;
+  margin-top: 2px !important;
 }
 
-p {
+main p {
+  background: white;
+  margin: auto;
+  padding: 1em;
+  border: 1px solid var(--border-color);
+}
+
+main p a {
+  text-decoration: underline;
+  color: brown !important;
+}
+
+.card {
+    width: 26vw;
+    padding: 0 1em;
+    background: var(--grid-background);
+    background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
+    /* background: white; */
+}
+
+.card .image {
+    height: 26vw;
+    aspect-ratio: 1/1;
+    position: relative;
+    /* box-shadow: var(--shadow-offset-xl) var(--shadow-offset-xl) 0px var(--shadow-color); */
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.card .image img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 160%;
+}
+
+.card h2 a:hover {
+    color: white;
+    background: black;
+    overflow: hidden;
+    border: 1px solid white;
+}
+
+.card h2 {
+    width: fit-content;
+    margin: .5em auto 1em;
+    padding: 0;
+    text-align: center;
     background: white;
+    box-shadow: var(--shadow-offset-xl) var(--shadow-offset-xl) 0px var(--shadow-color);
+}
+
+.card h2 a {
+    display: block;
+    padding: var(--spacing-xs) var(--spacing-md);
+    text-align: center;
+    min-width: calc(100% - 2*var(--spacing-md));
+    min-height: calc(100% - 2*var(--spacing-xs));
+    margin: 0;
+    border: 1px solid var(--border-color);
+}
+
+.card p {
+    margin: 0 auto 1em;
+}
+
+#header-links {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1em;
+  background: transparent;
+  vertical-align: middle;
+}
+
+#header-links * {
+  display: inline-block;
+}
+
+.rc-scout {
+  display: inline-block;
+  padding: 0;
+  border: 0;
+  margin: 0 .5em;
+}
+.rc-scout__text {
+  display: block;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  height: 100%;
+  font-size: 100%;
+}
+.rc-scout__logo {
+  display: inline-block;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  width: 1.5em;
+  height: 1.5em;
+  vertical-align: bottom;
+  background: no-repeat center
+    url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2015%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2212%22%20height%3D%2210%22%20fill%3D%22%23000%22%3E%3C%2Frect%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2210%22%20height%3D%228%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%228%22%20height%3D%226%22%20fill%3D%22%23000%22%3E%3C%2Frect%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%233dc06c%22%3E%3C%2Frect%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%233dc06c%22%3E%3C%2Frect%3E%3Crect%20x%3D%226%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%233dc06c%22%3E%3C%2Frect%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%233dc06c%22%3E%3C%2Frect%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%233dc06c%22%3E%3C%2Frect%3E%3Crect%20x%3D%224%22%20y%3D%229%22%20width%3D%224%22%20height%3D%223%22%20fill%3D%22%23000%22%3E%3C%2Frect%3E%3Crect%20x%3D%221%22%20y%3D%2211%22%20width%3D%2210%22%20height%3D%224%22%20fill%3D%22%23000%22%3E%3C%2Frect%3E%3Crect%20x%3D%220%22%20y%3D%2212%22%20width%3D%2212%22%20height%3D%223%22%20fill%3D%22%23000%22%3E%3C%2Frect%3E%3Crect%20x%3D%222%22%20y%3D%2213%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3Crect%20x%3D%223%22%20y%3D%2212%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3Crect%20x%3D%224%22%20y%3D%2213%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3Crect%20x%3D%225%22%20y%3D%2212%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3Crect%20x%3D%226%22%20y%3D%2213%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3Crect%20x%3D%227%22%20y%3D%2212%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3Crect%20x%3D%228%22%20y%3D%2213%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3Crect%20x%3D%229%22%20y%3D%2212%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff%22%3E%3C%2Frect%3E%3C%2Fsvg%3E");
+}
+.rc-scout__link:link,
+.rc-scout__link:visited {
+  color: #3dc06c;
+  text-decoration: underline;
+}
+.rc-scout__link:hover,
+.rc-scout__link:active {
+  color: #4e8b1d;
 }
