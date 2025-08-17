@@ -453,7 +453,7 @@ main p a {
 }
 
 .card {
-    width: 26vw;
+    /* width: 26vw; */
     padding: 0 1em;
     background: var(--grid-background);
     background-size: calc(var(--grid-line) * 2) calc(var(--grid-line) * 2);
@@ -461,7 +461,7 @@ main p a {
 }
 
 .card .image {
-    height: 26vw;
+    width: 100%;
     aspect-ratio: 1/1;
     position: relative;
     /* box-shadow: var(--shadow-offset-xl) var(--shadow-offset-xl) 0px var(--shadow-color); */

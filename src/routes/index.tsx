@@ -15,7 +15,7 @@ const About: Component = () => {
         <br/><br/>The following is a roughly chronological ordering of various implementations and experiments that have grown out of the initial idea.
         </p>
       </div>
-      <div class='max-w-[90vw] m-auto grid grid-cols-3 gap-4 '>
+      <div class='max-w-[90vw] m-auto grid grid-cols-1 gap-4 x-sm:grid-cols-1 sm:grid-cols-2 md:grid-cols-3'>
         <div class='card'>
           <h2><a href="/synth">Expression Synthesizer</a></h2>
           <div class='content flex flex-col gap-0'>
@@ -38,8 +38,11 @@ const About: Component = () => {
           </div>
         </div>
         <div class='card'>
-          <h2><a href="/pareidolia">Pareidolia</a></h2>
+          <h2><a href="/pareidolia">Emotional Pareidolia</a></h2>
+          <div class='content flex flex-col gap-0'>
+          <div class="image"><img src="/preview/tree.gif" alt="Emotional Pareidolia" /></div>
           <p>A whimsical experiment in which the emotional expression model is applied to "face-like" static images using the same basic interface as the expression synthesizer. The image deformations are obtained using thin-plate spline calculations based on the same underlying vector displacement model.</p>
+          </div>
         </div>
         <div class='card'>
           <h2><a href="/camera">Pareidolia Webcam Filter</a></h2>

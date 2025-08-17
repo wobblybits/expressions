@@ -9,7 +9,7 @@ export default defineConfig({
   },
   server: process.env.NODE_ENV === "production" ? {
     preset: "static",
-    baseURL: "/pareidolia/",
+    baseURL: "/expressions/",
     prerender: {
       routes: ["/", "/about", "/game", "/composite", "/pareidolia"],
       crawlLinks: false
