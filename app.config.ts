@@ -3,7 +3,7 @@ import { defineConfig } from "@solidjs/start/config";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  ssr: false,
+  ssr: process.env.NODE_ENV === "production" || process.env.NODE_ENV === "local",
   vite: {
     plugins: [tailwindcss()],
   },
