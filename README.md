@@ -1,38 +1,35 @@
-[![deploy](https://github.com/wobblybits/pareidolia/actions/workflows/deploy.yml/badge.svg)](https://github.com/wobblybits/pareidolia/actions/workflows/deploy.yml)
+# Facial Expressions
 
-## Usage
+[![deploy](https://github.com/wobblybits/pareidolia/actions/workflows/deploy.yml/badge.svg)](https://github.com/wobblybits/pareidolia/actions/workflows/deploy.yml) [![The Recurse Center](https://img.shields.io/badge/created%20at-recurse%20center-white)](https://www.recurse.com/)
 
-Those templates dependencies are maintained via [pnpm](https://pnpm.io) via `pnpm up -Lri`.
+## Demonstrations
 
-This is the reason you see a `pnpm-lock.yaml`. That being said, any package manager will work. This file can be safely be removed once you clone a template.
+### [Expression Synthesizer](/synth)
 
-```bash
-$ npm install # or pnpm install or yarn install
-```
+![Expression Synthesizer](/preview/synth.gif)
 
-### Learn more on the [Solid Website](https://solidjs.com) and come chat with us on our [Discord](https://discord.com/invite/solidjs)
+A simple interface for controlling the expression of a 3d facemesh. Built using a vector displacement model trained on a a handful of tagged image datasets from [Kaggle](https://www.kaggle.com/). Early attempts used a pixel-based "eigenface" approach, then the dlib face detection model, and finally the 3d facemesh model from [MediaPipe](https://github.com/google/mediapipe). The displacement vectors were generated using principal component analysis.
 
-## Available Scripts
+### [Emotional Arithmetic Tables](/arithmetic)
 
-In the project directory, you can run:
+![Emotional Arithmetic Tables](/preview/table.png)
 
-### `npm run dev` or `npm start`
+Using the model created for the expression synthesizer, I was interested in visualizing the combinations of the 8 "primary" emotions and matching them to emotional vocabulary using analogous superposition of word vectors in a semantic embedding space.
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### [Emotional Transference](/transference)
 
-The page will reload if you make edits.<br>
+![Emotional Transference](/preview/transference.gif)
 
-### `npm run build`
+A grid-based time-step simulation that allows for simplified interactions between cells. Each cell comprises an internal emotional state visualized as a face, as well as a single "neuron" (weight matrix and bias vector) that "learns" to move towards a user-controlled "homeostasis" state (using gradient descent) while "training" on the emotional states of its neighbors.
 
-Builds the app for production to the `dist` folder.<br>
-It correctly bundles Solid in production mode and optimizes the build for the best performance.
+### [Emotional Pareidolia](/pareidolia)
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+![Emotional Pareidolia](/preview/tree.gif)
 
-## Deployment
+A whimsical experiment in which the emotional expression model is applied to "face-like" static images using the same basic interface as the expression synthesizer. The image deformations are obtained using thin-plate spline calculations based on the same underlying vector displacement model.
 
-You can deploy the `dist` folder to any static host provider (netlify, surge, now, etc.)
+### [Pareidolia Webcam Filter](/camera)
 
-## This project was created with the [Solid CLI](https://github.com/solidjs-community/solid-cli)
+![Pareidolia Webcam Filter](/preview/peach.gif)
+
+An extension of the pareidolia experiment that is untethered from the emotional expression model. Instead it uses facemesh displacement data directly from a user's webcam. The thin-plate spline calculations were optimized to run in real-time using a GPU. 
