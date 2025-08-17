@@ -14,5 +14,12 @@ export default defineConfig({
       routes: ["/", "/index", "/camera", "/arithmetic", "/pareidolia", "/transference"],
       crawlLinks: false
     }
+  } : process.env.NODE_ENV === "local" ? {
+    preset: "static",
+    baseURL: "/",
+    prerender: {
+      routes: ["/", "/index", "/camera", "/arithmetic", "/pareidolia", "/transference"],
+      crawlLinks: false
+    }
   } : undefined,
 });
