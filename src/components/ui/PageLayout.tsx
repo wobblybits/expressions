@@ -1,6 +1,4 @@
 import { Component, JSX } from 'solid-js';
-import Navigation from './Navigation';
-import ClientOnly from '../../lib/ClientOnly';
 
 interface PageLayoutProps {
   title: string;
@@ -10,13 +8,7 @@ interface PageLayoutProps {
 
 const PageLayout: Component<PageLayoutProps> = (props) => {
   return (
-    <ClientOnly 
-      fallback={
-        <div class="min-h-screen flex items-center justify-center">
-          <div id='loading'>Loading...</div>
-        </div>
-      }
-    >
+      <>
       <div id="header-links">
           <a href="https://github.com/wobblybits/expressions" target="_blank" rel="noopener" class="header-link" aria-label="View on GitHub">
             <img src="https://img.shields.io/github/stars/wobblybits/expressions?style=social" alt="GitHub stars" class="star-badge"/>
@@ -28,7 +20,7 @@ const PageLayout: Component<PageLayoutProps> = (props) => {
           {props.children}
         </main>
       </div>
-    </ClientOnly>
+      </>
   );
 };
 

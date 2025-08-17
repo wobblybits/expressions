@@ -1,5 +1,5 @@
-import { FaceMesh, Results } from '@mediapipe/face_mesh';
-import { Camera } from '@mediapipe/camera_utils';
+// import { FaceMesh } from '@mediapipe/face_mesh';
+// import { Camera } from '@mediapipe/camera_utils';
 
 interface FaceLandmarks {
   x: number;
@@ -8,10 +8,11 @@ interface FaceLandmarks {
 }
 
 class FaceMeshCamera {
-  private faceMesh: FaceMesh;
-  private camera: Camera;
+  private faceMesh: any;
+  private camera: any;
   private videoElement: HTMLVideoElement;
   private onLandmarksCallback?: (landmarks: number[][]) => void;
+  private isInitialized = false;
   
   // Add smoothing state
   private smoothedLandmarks: number[][] | null = null;
@@ -19,43 +20,55 @@ class FaceMeshCamera {
 
   constructor(onLandmarks?: (landmarks: number[][]) => void, smoothingFactor: number = 0.3) {
     this.onLandmarksCallback = onLandmarks;
-    this.smoothingFactor = Math.max(0, Math.min(1, smoothingFactor)); // Clamp between 0 and 1
+    this.smoothingFactor = Math.max(0, Math.min(1, smoothingFactor));
     
-    // Create video element (not added to DOM)
     this.videoElement = document.createElement('video');
     
-    // Initialize FaceMesh
-    this.faceMesh = new FaceMesh({
-      locateFile: (file) => {
-        return `../node_modules/@mediapipe/face_mesh/${file}`;
-      }
-    });
+    // Initialize MediaPipe components asynchronously
+    this.initializeMediaPipe();
+  }
 
-    this.faceMesh.setOptions({
+  private async initializeMediaPipe() {
+    try {
+      const [{ FaceMesh }, { Camera }] = await Promise.all([
+        import('@mediapipe/face_mesh'),
+        import('@mediapipe/camera_utils')
+      ]);
+
+      // Initialize FaceMesh
+      this.faceMesh = new FaceMesh({
+        locateFile: (file: string) => {
+          return `../node_modules/@mediapipe/face_mesh/${file}`;
+        }
+      });
+
+      this.faceMesh.setOptions({
         maxNumFaces: 1,
         refineLandmarks: true,
-    });
+      });
 
-    // Set up results handling
-    this.faceMesh.onResults((results: Results) => {
-      if (results.multiFaceLandmarks && this.onLandmarksCallback) {
-        //const regularizedLandmarks = results.multiFaceLandmarks.map(faceLandmarks => 
-        //   this.regularizeLandmarks(faceLandmarks)
-        // );
-        const regularizedLandmarks = this.regularizeLandmarks(results.multiFaceLandmarks[0]);
-        this.onLandmarksCallback(regularizedLandmarks);
-      }
-    });
+      // Set up results handling - use 'any' type for results
+      this.faceMesh.onResults((results: any) => {
+        if (results.multiFaceLandmarks && this.onLandmarksCallback) {
+          const regularizedLandmarks = this.regularizeLandmarks(results.multiFaceLandmarks[0]);
+          this.onLandmarksCallback(regularizedLandmarks);
+        }
+      });
 
-    // Set up camera
-    this.camera = new Camera(this.videoElement, {
-      onFrame: async () => {
-        await this.faceMesh.send({ image: this.videoElement });
-      },
-      width: 640,
-      height: 480,
-      facingMode: "user",
-    });
+      // Set up camera
+      this.camera = new Camera(this.videoElement, {
+        onFrame: async () => {
+          await this.faceMesh.send({ image: this.videoElement });
+        },
+        width: 640,
+        height: 480,
+        facingMode: "user",
+      });
+
+      this.isInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize MediaPipe:', error);
+    }
   }
 
   private regularizeLandmarks(landmarks: FaceLandmarks[], imageScale: number = 1): number[][] {
@@ -200,10 +213,16 @@ class FaceMeshCamera {
   }
 
   start(): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('MediaPipe components are not initialized. Call initializeMediaPipe() first.');
+    }
     return this.camera.start();
   }
 
   stop(): void {
+    if (!this.isInitialized) {
+      throw new Error('MediaPipe components are not initialized. Call initializeMediaPipe() first.');
+    }
     this.camera.stop();
   }
 
