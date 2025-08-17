@@ -11,7 +11,7 @@ export default defineConfig({
     preset: "static",
     baseURL: "/expressions/",
     prerender: {
-      routes: ["/", "/index", "/camera", "/arithmetic", "/pareidolia", "/transference"],
+      routes: ["", "index", "camera", "arithmetic", "pareidolia", "transference"],
       crawlLinks: false
     }
   } : process.env.NODE_ENV === "local" ? {
