@@ -24,7 +24,7 @@ const About: Component = () => {
           </div>
         </div>
         <div class='card'>
-          <h2><a href="/table">Emotional Arithmetic Tables</a></h2>
+          <h2><a href="/arithmetic">Emotional Arithmetic Tables</a></h2>
           <div class='content flex flex-col gap-0'>
           <div class="image"><img src="/preview/table.png" alt="Emotional Arithmetic Tables" /></div>
           <p>Using the model created for the expression synthesizer, I was interested in visualizing the combinations of the 8 "primary" emotions and matching them to emotional vocabulary using analogous superposition of word vectors in a semantic embedding space.</p>

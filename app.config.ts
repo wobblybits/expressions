@@ -11,7 +11,7 @@ export default defineConfig({
     preset: "static",
     baseURL: "/expressions/",
     prerender: {
-      routes: ["/", "/about", "/game", "/composite", "/pareidolia"],
+      routes: ["/", "/index", "/camera", "/arithmetic", "/pareidolia", "/transference"],
       crawlLinks: false
     }
   } : undefined,
