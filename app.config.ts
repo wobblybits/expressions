@@ -10,8 +10,6 @@ export default defineConfig({
     plugins: [tailwindcss()],
     define: {
       "import.meta.env.NODE_ENV": JSON.stringify("local"),
-      "import.meta.env.SERVER_BASE_URL": JSON.stringify("/ellipses/.output/public/"),
-      "import.meta.env.VITE_BASE_URL": JSON.stringify("/ellipses/.output/public/"),
     },
     optimizeDeps: {
       force: true
@@ -20,11 +18,12 @@ export default defineConfig({
   extensions: [".tsx"],
   server: {
     preset: "static",
+    // Add the baseURL back for asset paths
     baseURL: "/ellipses/.output/public/",
     serveStatic: true,
     prerender: {
       autoSubfolderIndex: false,
-      routes: ["index", "camera", "arithmetic", "pareidolia", "transference"],
+      routes: ["/", "/camera", "/arithmetic", "/pareidolia", "/transference"],
     }
   },
 });

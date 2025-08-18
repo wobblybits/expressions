@@ -1,5 +1,6 @@
 import { Component } from 'solid-js';
 import PageLayout from '../components/ui/PageLayout';
+import ClientOnly from '../lib/ClientOnly';
 import CompositePage from '../features/emotions/pages/CompositePage';
 
 const Composite: Component = () => {

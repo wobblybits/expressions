@@ -10,17 +10,7 @@ const Game: Component = () => {
       title="Emotion Game" 
       description="Interactive emotion detection game"
     >
-      <ClientOnly 
-        fallback={
-          <div class="flex items-center justify-center h-96 bg-gray-800">
-            <div class="text-center">
-              <div class="animate-pulse bg-gray-600 w-96 h-64 mx-auto mb-4 rounded"></div>
-              <p class="text-lg">Loading emotion game...</p>
-              <p class="text-sm text-gray-400">Preparing interactive emotion detection</p>
-            </div>
-          </div>
-        }
-      >
+      <ClientOnly>
         <GamePage />
       </ClientOnly>
     </PageLayout>
