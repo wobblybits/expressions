@@ -1,1 +1,0 @@
-import{j as t,t as n,w as a,i as r,S as i}from"./web-4ew4HSQc.js";var l=a("<div id=loading>Loading interactive content...");const c=e=>t(i,{when:!r,get fallback(){return e.fallback||n(l)},get children(){return e.children}});export{c as C};

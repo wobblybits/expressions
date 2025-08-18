@@ -1,24 +1,24 @@
 {
-  "_ClientOnly-moobLJRC.js": {
-    "file": "assets/ClientOnly-moobLJRC.js",
+  "_ClientOnly-B3hFWBc-.js": {
+    "file": "assets/ClientOnly-B3hFWBc-.js",
     "name": "ClientOnly",
     "imports": [
-      "_web-4ew4HSQc.js"
+      "_web-BjSrF1zk.js"
     ]
   },
-  "_Face-Cuc20oiI.js": {
-    "file": "assets/Face-Cuc20oiI.js",
+  "_Face-CMEODpwO.js": {
+    "file": "assets/Face-CMEODpwO.js",
     "name": "Face",
     "imports": [
-      "_web-4ew4HSQc.js",
-      "_ClientOnly-moobLJRC.js"
+      "_web-BjSrF1zk.js",
+      "_ClientOnly-B3hFWBc-.js"
     ]
   },
-  "_PageLayout-BPb-TXjH.js": {
-    "file": "assets/PageLayout-BPb-TXjH.js",
+  "_PageLayout-DMiXyjle.js": {
+    "file": "assets/PageLayout-DMiXyjle.js",
     "name": "PageLayout",
     "imports": [
-      "_web-4ew4HSQc.js"
+      "_web-BjSrF1zk.js"
     ]
   },
   "_TPS-DfqRdrRt.js": {
@@ -49,142 +49,128 @@
     "file": "assets/preload-helper-BrT8b0UT.js",
     "name": "preload-helper"
   },
-  "_web-4ew4HSQc.js": {
-    "file": "assets/web-4ew4HSQc.js",
+  "_web-BjSrF1zk.js": {
+    "file": "assets/web-BjSrF1zk.js",
     "name": "web"
   },
   "src/features/camera/pages/CameraPage.tsx": {
-    "file": "assets/CameraPage-BvVgsUYG.js",
+    "file": "assets/CameraPage-ByWXI35j.js",
     "name": "CameraPage",
     "src": "src/features/camera/pages/CameraPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_web-4ew4HSQc.js",
-      "_Face-Cuc20oiI.js",
+      "_web-BjSrF1zk.js",
+      "_Face-CMEODpwO.js",
       "_TPS-DfqRdrRt.js",
       "_preload-helper-BrT8b0UT.js",
-      "_ClientOnly-moobLJRC.js"
+      "_ClientOnly-B3hFWBc-.js"
     ],
     "dynamicImports": [
       "_face_mesh-C4n09Vz3.js",
       "_camera_utils-c8ZgCaOI.js"
     ]
   },
-  "src/features/emotions/pages/CompositePage.tsx": {
-    "file": "assets/CompositePage-BHk002m1.js",
-    "name": "CompositePage",
-    "src": "src/features/emotions/pages/CompositePage.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_web-4ew4HSQc.js",
-      "_Face-Cuc20oiI.js",
-      "_ClientOnly-moobLJRC.js"
-    ]
-  },
   "src/features/emotions/pages/GamePage.tsx": {
-    "file": "assets/GamePage-BXEcCRcm.js",
+    "file": "assets/GamePage-CN8Av54i.js",
     "name": "GamePage",
     "src": "src/features/emotions/pages/GamePage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_web-4ew4HSQc.js",
-      "_Face-Cuc20oiI.js",
-      "_ClientOnly-moobLJRC.js"
+      "_web-BjSrF1zk.js",
+      "_Face-CMEODpwO.js",
+      "_ClientOnly-B3hFWBc-.js"
     ]
   },
   "src/features/pareidolia/pages/PareidoliaPage.tsx": {
-    "file": "assets/PareidoliaPage-BIpDFeSv.js",
+    "file": "assets/PareidoliaPage-_y8EO4Lv.js",
     "name": "PareidoliaPage",
     "src": "src/features/pareidolia/pages/PareidoliaPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_web-4ew4HSQc.js",
-      "_Face-Cuc20oiI.js",
+      "_web-BjSrF1zk.js",
+      "_Face-CMEODpwO.js",
       "_TPS-DfqRdrRt.js",
-      "_ClientOnly-moobLJRC.js"
+      "_ClientOnly-B3hFWBc-.js"
     ]
   },
   "src/routes/arithmetic.tsx?pick=default&pick=$css": {
-    "file": "assets/arithmetic-B97k7VNq.js",
+    "file": "assets/arithmetic-DPiPgd3Y.js",
     "name": "arithmetic",
     "src": "src/routes/arithmetic.tsx?pick=default&pick=$css",
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
-      "_preload-helper-BrT8b0UT.js",
-      "_web-4ew4HSQc.js",
-      "_ClientOnly-moobLJRC.js",
-      "_PageLayout-BPb-TXjH.js"
-    ],
-    "dynamicImports": [
-      "src/features/emotions/pages/CompositePage.tsx"
+      "_PageLayout-DMiXyjle.js",
+      "_web-BjSrF1zk.js",
+      "_Face-CMEODpwO.js",
+      "_ClientOnly-B3hFWBc-.js"
     ]
   },
   "src/routes/camera.tsx?pick=default&pick=$css": {
-    "file": "assets/camera-DT3GnWD_.js",
+    "file": "assets/camera-DX86GqO9.js",
     "name": "camera",
     "src": "src/routes/camera.tsx?pick=default&pick=$css",
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
       "_preload-helper-BrT8b0UT.js",
-      "_web-4ew4HSQc.js",
-      "_PageLayout-BPb-TXjH.js"
+      "_web-BjSrF1zk.js",
+      "_PageLayout-DMiXyjle.js"
     ],
     "dynamicImports": [
       "src/features/camera/pages/CameraPage.tsx"
     ]
   },
   "src/routes/index.tsx?pick=default&pick=$css": {
-    "file": "assets/index-DvTf8VGn.js",
+    "file": "assets/index-DBxOALFm.js",
     "name": "index",
     "src": "src/routes/index.tsx?pick=default&pick=$css",
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
-      "_web-4ew4HSQc.js",
-      "_PageLayout-BPb-TXjH.js"
+      "_web-BjSrF1zk.js",
+      "_PageLayout-DMiXyjle.js"
     ]
   },
   "src/routes/pareidolia.tsx?pick=default&pick=$css": {
-    "file": "assets/pareidolia-WCWGEMVi.js",
+    "file": "assets/pareidolia-D9409Gdm.js",
     "name": "pareidolia",
     "src": "src/routes/pareidolia.tsx?pick=default&pick=$css",
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
       "_preload-helper-BrT8b0UT.js",
-      "_web-4ew4HSQc.js",
-      "_ClientOnly-moobLJRC.js",
-      "_PageLayout-BPb-TXjH.js"
+      "_web-BjSrF1zk.js",
+      "_ClientOnly-B3hFWBc-.js",
+      "_PageLayout-DMiXyjle.js"
     ],
     "dynamicImports": [
       "src/features/pareidolia/pages/PareidoliaPage.tsx"
     ]
   },
   "src/routes/transference.tsx?pick=default&pick=$css": {
-    "file": "assets/transference-C-IH9Ewq.js",
+    "file": "assets/transference-CVEE5Iju.js",
     "name": "transference",
     "src": "src/routes/transference.tsx?pick=default&pick=$css",
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
       "_preload-helper-BrT8b0UT.js",
-      "_web-4ew4HSQc.js",
-      "_ClientOnly-moobLJRC.js",
-      "_PageLayout-BPb-TXjH.js"
+      "_web-BjSrF1zk.js",
+      "_ClientOnly-B3hFWBc-.js",
+      "_PageLayout-DMiXyjle.js"
     ],
     "dynamicImports": [
       "src/features/emotions/pages/GamePage.tsx"
     ]
   },
   "virtual:$vinxi/handler/client": {
-    "file": "assets/client-D2IZ3c-z.js",
+    "file": "assets/client-3i4bVxdQ.js",
     "name": "client",
     "src": "virtual:$vinxi/handler/client",
     "isEntry": true,
     "imports": [
-      "_web-4ew4HSQc.js",
+      "_web-BjSrF1zk.js",
       "_preload-helper-BrT8b0UT.js"
     ],
     "dynamicImports": [

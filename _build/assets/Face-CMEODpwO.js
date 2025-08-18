@@ -1,4 +1,4 @@
-import{b as P7,G as D7,j as L7,t as q5,w as Z6,H as i2,d as Y5,L as K5}from"./web-4ew4HSQc.js";import{C as U7}from"./ClientOnly-moobLJRC.js";/**
+import{b as P7,G as D7,i as L7,t as q5,w as Z6,H as i2,d as Y5,M as K5}from"./web-BjSrF1zk.js";import{C as U7}from"./ClientOnly-B3hFWBc-.js";/**
  * @license
  * Copyright 2010-2025 Three.js Authors
  * SPDX-License-Identifier: MIT
