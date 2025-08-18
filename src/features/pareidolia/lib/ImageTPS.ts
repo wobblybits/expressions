@@ -3,6 +3,7 @@ import EmotionModel from "../../emotions/lib/EmotionModel";
 import TPS from "../../../tps/TPS";
 import meanFace from "../../../data/mean.json";
 import { silhouette } from "../../../data/features.json";
+import GPU from "../../../tps/GPU";
 
 const getBBox = (points: number[][]) => {
   return {
@@ -105,10 +106,19 @@ class ImageTPS {
     silhouetteHull: number[][];
     imageSilhouette: number[][];
     mask: Uint8ClampedArray;
+    
+    // GPU-related properties
+    gpu: GPU;
+    blurMask: Uint8Array;
+    offscreenCanvas: OffscreenCanvas;
+    offscreenCtx: OffscreenCanvasRenderingContext2D;
+    processingScale: number;
+    imageData: ImageData;
 
     constructor(imageLandmarks: Map<string, number[]>, emotionLevels: EmotionLevels, emotionModel: EmotionModel) {
         this.emotionModel = emotionModel;
         this.imageLandmarks = imageLandmarks;
+        this.processingScale = 1; // Can be adjusted for performance
 
         this.imagePoints = [];
         this.modelPoints = [];
@@ -158,6 +168,11 @@ class ImageTPS {
         this.canvas.style.background = 'transparent';
         this.ctx = this.canvas.getContext('2d');
 
+        // Create offscreen canvas for processing
+        this.offscreenCanvas = new OffscreenCanvas(this.canvas.width / this.processingScale, this.canvas.height / this.processingScale);
+        this.offscreenCtx = this.offscreenCanvas.getContext('2d');
+        this.offscreenCtx.fillRect(0, 0, this.canvas.width / this.processingScale, this.canvas.height / this.processingScale);
+
         this.ctx.fillStyle = 'transparent';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -170,10 +185,95 @@ class ImageTPS {
             }
         }
 
+        // Create blur mask similar to CameraTPS
+        let tmp = new Uint8ClampedArray([...this.mask]);
+        this.blurMask = new Uint8Array(this.canvas.width * this.canvas.height);
+        const blurIterations = 20;
+        for (let i = 0; i < blurIterations; i++) {
+          for (let y = 0; y < this.canvas.height; y++) {
+              for (let x = 0; x < this.canvas.width; x++) {
+                this.blurMask[y * this.canvas.width + x] = 0;
+                  for (let dy = -1; dy <= 1; dy++) {
+                      for (let dx = -1; dx <= 1; dx++) {
+                          const ny = y + dy;
+                          const nx = x + dx;
+                          if (ny < 0 || ny >= this.canvas.height || nx < 0 || nx >= this.canvas.width) continue;
+                          this.blurMask[y * this.canvas.width + x] += tmp[ny * this.canvas.width + nx] * Math.pow(0.5, 2 + Math.abs(dy) + Math.abs(dx));
+                      }
+                  }
+              }
+          }
+          tmp = new Uint8ClampedArray([...this.blurMask]);
+        }
+
+        // Initialize GPU
+        this.gpu = new GPU();
+
         return this;
     }
 
+    // Initialize GPU asynchronously (should be called after construction)
+    async initializeGPU(imageData: ImageData): Promise<void> {
+        this.imageData = imageData;
+        
+        try {
+            await this.gpu.initialize();
+            console.log('GPU initialized successfully for ImageTPS');
+            
+            this.gpu.createBuffers({
+                baseNumPoints: this.imagePoints.length,
+                distortNumPoints: this.imagePoints.length, // Use same for simplicity
+                imageWidth: this.imageData.width,
+                imageHeight: this.imageData.height,
+                faceMinY: this.imageBBox.minY,
+                faceMinX: this.imageBBox.minX,
+                faceWidth: this.imageBBox.maxX - this.imageBBox.minX,
+                faceHeight: this.imageBBox.maxY - this.imageBBox.minY
+            });
+            
+            // Update GPU buffers with base data
+            this.gpu.updateBuffer(this.gpu.meshPointsBuffer, new Float32Array(this.modelPoints.map((d) => d.slice(0,2)).flat()));
+            this.gpu.updateBuffer(this.gpu.imagePointsBuffer, new Float32Array(this.imagePoints.map((d) => d.slice(0,2)).flat()));
+            this.gpu.updateBuffer(this.gpu.distortPointsBuffer, new Float32Array(this.imagePoints.map((d) => d.slice(0,2)).flat()));
+            this.gpu.updateBuffer(this.gpu.modelPointsBuffer, new Float32Array(this.modelPoints.map((d) => d.slice(0,2)).flat()));
+            
+            // Update base coefficients
+            this.gpu.updateBaseCoeffs(
+                this.baseTPS.forwardParameters.Xc,
+                this.baseTPS.forwardParameters.Yc,
+                this.baseTPS.inverseParameters.Xc,
+                this.baseTPS.inverseParameters.Yc,
+            );
+            
+            // Convert image data to uint32 array
+            const imageDataUint32 = new Uint32Array(this.imageData.data.length / 4);
+            for (let i = 0; i < this.imageData.data.length; i += 4) {
+                imageDataUint32[i / 4] = (this.imageData.data[i + 3] << 24) | 
+                                 (this.imageData.data[i + 2] << 16) | 
+                                 (this.imageData.data[i + 1] << 8) | 
+                                 this.imageData.data[i];
+            }
+            this.gpu.updateUintBuffer(this.gpu.imageDataBuffer, imageDataUint32);
+            
+            // Update face data with blur mask
+            this.gpu.updateFaceDataWithBlurMask(this.blurMask);
+            
+            this.gpu.updateUniforms({
+                baseNumPoints: this.imagePoints.length,
+                distortNumPoints: this.imagePoints.length,
+                imageWidth: this.imageData.width,
+                imageHeight: this.imageData.height,
+                faceMinY: this.imageBBox.minY,
+                faceMinX: this.imageBBox.minX,
+                faceWidth: this.imageBBox.maxX - this.imageBBox.minX,
+                faceHeight: this.imageBBox.maxY - this.imageBBox.minY
+            });
 
+            console.log('GPU buffers initialized successfully for ImageTPS');
+        } catch (error) {
+            console.error('Failed to initialize GPU for ImageTPS:', error);
+        }
+    }
 
     getEmotionTransform(emotionLevels: EmotionLevels) {
         let emotionPoints = [];
@@ -223,6 +323,112 @@ class ImageTPS {
         }
         
         return [xPrime / weights, yPrime / weights];
+    }
+
+    // GPU-accelerated transformation method
+    async transformGPU(emotionLevels: EmotionLevels): Promise<ImageData | null> {
+        if (!this.gpu.initialized) {
+            console.log('GPU not ready for ImageTPS, falling back to CPU');
+            return null;
+        }
+
+        try {
+            // Create emotion-based transformation TPS
+            const emotionPoints = [];
+            const emotion = this.emotionModel.calculateCompositeEmotion(emotionLevels);
+            for (const [key, value] of this.imageLandmarks) {
+                const index = parseInt(key);
+                emotionPoints.push([emotion[index*3] + meanFace[index*3], emotion[index*3+1] - meanFace[index*3+1], emotion[index*3+2] + meanFace[index*3+2]]);
+            }
+            
+            const emotionTPS = new TPS(this.modelPoints, emotionPoints);
+            
+            // Update GPU with emotion transformation coefficients
+            this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, emotionTPS.inverseParameters.Xc, emotionTPS.inverseParameters.Yc);
+            
+            const faceWidth = this.imageBBox.maxX - this.imageBBox.minX;
+            const faceHeight = this.imageBBox.maxY - this.imageBBox.minY;
+            
+            this.gpu.updateUniforms({
+                baseNumPoints: this.imagePoints.length,
+                distortNumPoints: this.imagePoints.length,
+                imageWidth: this.imageData.width,
+                imageHeight: this.imageData.height,
+                faceMinY: this.imageBBox.minY,
+                faceMinX: this.imageBBox.minX,
+                faceWidth: faceWidth,
+                faceHeight: faceHeight
+            });
+            
+            await this.gpu.execute(faceWidth, faceHeight);
+            
+            // Read the result
+            const output = await this.gpu.readBuffer(this.gpu.faceDataBuffer, faceWidth * faceHeight * 4);
+            const result = new ImageData(output, faceWidth, faceHeight);
+            
+            // Update face data with blur mask for next iteration
+            this.gpu.updateFaceDataWithBlurMask(this.blurMask);
+            
+            return result;
+        } catch (error) {
+            console.error('Error executing GPU transformation for ImageTPS:', error);
+            return null;
+        }
+    }
+
+    // Method to draw using GPU with fallback to CPU
+    async drawGPU(emotionLevels: EmotionLevels, originalImageData: ImageData): Promise<void> {
+        const gpuResult = await this.transformGPU(emotionLevels);
+        
+        if (gpuResult) {
+            // GPU succeeded, use the result
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.offscreenCtx.putImageData(gpuResult, 0, 0);
+            this.ctx.drawImage(this.offscreenCanvas, 0, 0, this.canvas.width, this.canvas.height);
+            console.log("GPU rendering");
+        } else {
+            // GPU failed, fallback to CPU
+            this.drawCPU(emotionLevels, originalImageData);
+            console.log("CPU fallback");
+        }
+    }
+
+    // CPU fallback method (existing logic)
+    drawCPU(emotionLevels: EmotionLevels, originalImageData: ImageData): void {
+        const adjustedEmotionLevels = {...emotionLevels};
+        // Remove base emotion offset if needed
+        for (var emotion in this.baseEmotionLevels) {
+            adjustedEmotionLevels[emotion] -= this.baseEmotionLevels[emotion];
+        }
+        
+        const newImageData = new Uint8ClampedArray(this.canvas.width * this.canvas.height * 4).fill(0);
+        const imageWidth = originalImageData.width;
+        
+        for (var y = 0; y < this.canvas.height; y++) {
+            for (var x = 0; x < this.canvas.width; x++) {
+                if (this.mask[y * this.canvas.width + x] == 0) continue;
+                const transformed = this.transformXY(adjustedEmotionLevels, x + this.imageBBox.minX, y + this.imageBBox.minY);
+                const index = (y * this.canvas.width + x) * 4;
+                const oldIndex = (Math.round(transformed[1]) * imageWidth + Math.round(transformed[0])) * 4;
+                if (oldIndex >= 0 && oldIndex < originalImageData.data.length - 3) {
+                    newImageData[index] = originalImageData.data[oldIndex];
+                    newImageData[index + 1] = originalImageData.data[oldIndex + 1];
+                    newImageData[index + 2] = originalImageData.data[oldIndex + 2];
+                    newImageData[index + 3] = originalImageData.data[oldIndex + 3];
+                }
+            }
+        }
+        this.ctx.putImageData(new ImageData(newImageData, this.canvas.width, this.canvas.height), 0, 0);
+    }
+
+    // Cleanup method
+    destroy(): void {
+        if (this.gpu) {
+            this.gpu.destroy();
+        }
+        if (this.canvas && this.canvas.parentNode) {
+            this.canvas.parentNode.removeChild(this.canvas);
+        }
     }
 }
   

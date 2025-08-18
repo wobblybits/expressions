@@ -60,26 +60,14 @@ const Pareidolia: Component<{emotionModel: EmotionModel}> = (props) => {
         // drawLandmarks();
     }
 
-    const fixImage = () => {
+    const fixImage = async () => {
         clearSVG();
         if (imageTPS) {
+            imageTPS.destroy(); // Clean up previous instance
             imageTPS.canvas.remove();
         }
         offsetEmotionLevels = {...currentEmotionLevels};
-        // const source = [];
-        // const target = [];
-        // for (const featureName in fixedPoints) {
-        //     if (fixedPoints[featureName].length == 1) {
-        //         source.push(meanFace.slice(features[featureName].path[0]*3, features[featureName].path[0]*3+2));
-        //         target.push([...fixedPoints[featureName][0], 0]);
-        //     }
-        //     else if (fixedPoints[featureName].length == 2) {
-        //         source.push(meanFace.slice(features[featureName].path[0]*3, features[featureName].path[0]*3+2));
-        //         source.push(meanFace.slice(features[featureName].path[1]*3, features[featureName].path[1]*3+2));
-        //         target.push(fixedPoints[featureName][0]);
-        //         target.push(fixedPoints[featureName][1]);
-        //     }
-        // }
+        
         const imageLandmarks = new Map();
         for (const featureName in fixedPoints) {
             if (features[featureName].path.length == 0 || fixedPoints[featureName].length == 0) {
@@ -99,20 +87,21 @@ const Pareidolia: Component<{emotionModel: EmotionModel}> = (props) => {
                 }
             }
         }
+        
         imageTPS = new ImageTPS(imageLandmarks, currentEmotionLevels, new EmotionModel());
         imageTPS.canvas.style.position = 'absolute';
         
         // Position the imageTPS canvas in the same coordinate system as the SVG
-        // The SVG is centered, so we need to position relative to center
         imageTPS.canvas.style.top = '50%';
         imageTPS.canvas.style.left = '50%';
         imageTPS.canvas.style.transform = `translate(${-canvasRef.getBoundingClientRect().width / (2 * displayScale())}px, ${-canvasRef.getBoundingClientRect().height / (2 * displayScale())}px) translate(${imageTPS.imageBBox.minX}px, ${imageTPS.imageBBox.minY}px)`;
         imageTPS.canvas.style.pointerEvents = 'none';
         
         // Insert the canvas after the canvasRef element
-        
         canvasRef.after(imageTPS.canvas);
 
+        // Initialize GPU asynchronously
+        await imageTPS.initializeGPU(originalImageData);
     }
 
     const drawLandmarks = () => {
@@ -437,28 +426,35 @@ const Pareidolia: Component<{emotionModel: EmotionModel}> = (props) => {
                     }}
                 ></svg>
             </div>
-            <Controls title="Pareidolia" emotionModel={emotionModel} callback={(emotionLevels) => {
+            <Controls title="Pareidolia" emotionModel={emotionModel} callback={async (emotionLevels) => {
                 currentEmotionLevels = emotionLevels;
                 const adjustedEmotionLevels = {...currentEmotionLevels};
                 for (var emotion in offsetEmotionLevels) {
                     adjustedEmotionLevels[emotion] -= offsetEmotionLevels[emotion];
                 }
                 if (imageTPS) {
-                    const newImageData = new Uint8ClampedArray(imageTPS.canvas.width * imageTPS.canvas.height * 4).fill(0);
-                    const imageWidth = imageDimensions().width;
-                    for (var y = 0; y < imageTPS.canvas.height; y++) {
-                        for (var x = 0; x < imageTPS.canvas.width; x++) {
-                            if (imageTPS.mask[y * imageTPS.canvas.width + x] == 0) continue;
-                            const transformed = imageTPS.transformXY(adjustedEmotionLevels, x + imageTPS.imageBBox.minX, y + imageTPS.imageBBox.minY);
-                            const index = (y * imageTPS.canvas.width + x) * 4;
-                            const oldIndex = (Math.round(transformed[1]) * imageWidth + Math.round(transformed[0])) * 4;
-                            newImageData[index] = originalImageData.data[oldIndex];
-                            newImageData[index + 1] = originalImageData.data[oldIndex + 1];
-                            newImageData[index + 2] = originalImageData.data[oldIndex + 2];
-                            newImageData[index + 3] = originalImageData.data[oldIndex + 3];
+                    try {
+                        // Try GPU rendering first
+                        await imageTPS.drawGPU(adjustedEmotionLevels, originalImageData);
+                    } catch (error) {
+                        console.error('GPU rendering failed, using CPU fallback:', error);
+                        // If GPU fails, fall back to the original CPU method
+                        const newImageData = new Uint8ClampedArray(imageTPS.canvas.width * imageTPS.canvas.height * 4).fill(0);
+                        const imageWidth = imageDimensions().width;
+                        for (var y = 0; y < imageTPS.canvas.height; y++) {
+                            for (var x = 0; x < imageTPS.canvas.width; x++) {
+                                if (imageTPS.mask[y * imageTPS.canvas.width + x] == 0) continue;
+                                const transformed = imageTPS.transformXY(adjustedEmotionLevels, x + imageTPS.imageBBox.minX, y + imageTPS.imageBBox.minY);
+                                const index = (y * imageTPS.canvas.width + x) * 4;
+                                const oldIndex = (Math.round(transformed[1]) * imageWidth + Math.round(transformed[0])) * 4;
+                                newImageData[index] = originalImageData.data[oldIndex];
+                                newImageData[index + 1] = originalImageData.data[oldIndex + 1];
+                                newImageData[index + 2] = originalImageData.data[oldIndex + 2];
+                                newImageData[index + 3] = originalImageData.data[oldIndex + 3];
+                            }
                         }
+                        imageTPS.ctx.putImageData(new ImageData(newImageData, imageTPS.canvas.width, imageTPS.canvas.height), 0, 0);
                     }
-                    imageTPS.ctx.putImageData(new ImageData(newImageData, imageTPS.canvas.width, imageTPS.canvas.height), 0, 0);
                 }
             }}>
                 <h4>{featureName() in features ? features[featureName()].name : "Upload an Image"}</h4>

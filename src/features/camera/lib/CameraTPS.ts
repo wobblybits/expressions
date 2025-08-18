@@ -109,7 +109,7 @@ class CameraTPS {
     processingScale: number;
     imageData: ImageData;
     landmarkSkip: number;
-    blurMask: Uint8ClampedArray;
+    blurMask: Uint8Array;
     gpu: GPU;
 
     constructor(imageLandmarks: Map<string, number[]>, cameraLandmarks: number[][], imageData: ImageData, processingScale: number = 2) {
@@ -183,7 +183,7 @@ class CameraTPS {
             }
         }
         let tmp = new Uint8ClampedArray([...this.mask]);
-        this.blurMask = new Uint8ClampedArray(this.canvas.width * this.canvas.height);
+        this.blurMask = new Uint8Array(this.canvas.width * this.canvas.height);
         const blurIterations = 20;
         for (let i = 0; i < blurIterations; i++) {
           for (let y = 0; y < this.canvas.height; y++) {
@@ -297,12 +297,12 @@ class CameraTPS {
         if (params && this.gpu.initialized) { // Check if GPU is initialized
             this.gpu.updateBuffer(this.gpu.distortPointsBuffer, new Float32Array(newLandmarks.filter((_, i) => i % this.landmarkSkip === 0).map((d) => d.slice(0,2)).flat()));
             //console.log(params);
-            this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, params.Xc, params.Yc);
+            this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, new Float32Array(params.Xc), new Float32Array(params.Yc));
         }
         return true;
     }
 
-    transformXY(x, y): [number, number] {      
+    transformXY(x, y): number[] {      
         const inv = this.inverseMap[(y - this.imageBBox.minY) * (this.imageBBox.maxX - this.imageBBox.minX) + x - this.imageBBox.minX];
         return this.baseTPS.forward(this.activeTPS.inverse(inv));
     }
