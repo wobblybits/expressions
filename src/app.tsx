@@ -9,34 +9,21 @@ const PareidoliaPage = lazy(() => import("./routes/pareidolia"));
 const TransferencePage = lazy(() => import("./routes/transference"));
 
 const App: Component = () => {
-  const base = "/ellipses/.output/public";
-  
-  console.log("App component rendering with base:", base);
-  console.log("NODE_ENV:", import.meta.env.NODE_ENV);
-  console.log("Is server:", typeof window === 'undefined');
+  // Use DEPLOYMENT_TARGET instead of NODE_ENV
+  const target = import.meta.env.DEPLOYMENT_TARGET || "development";
+  const base = target === "production" 
+    ? "/expressions/" 
+    : target === "local" 
+    ? "/ellipses/.output/public/"
+    : ""; // development
+
+  if (target !== "production") {
+    console.log("App component rendering with base:", base);
+    console.log("Deployment target:", target);
+  }
   
   return (
-    <Router
-      base={base}
-      root={props => {
-        const pathname = props.location.pathname;
-        const stripped = pathname.replace(base, '');
-        
-        console.log("=== ROUTE DEBUG ===");
-        console.log("Full pathname:", pathname);
-        console.log("Stripped path:", `"${stripped}"`);
-        console.log("Children:", props.children);
-        
-        // Import and test route components directly
-        const isIndex = stripped === '' || stripped === '/';
-        
-        return (
-          <Suspense fallback={<div id='loading'>Loading...</div>}>
-            {props.children}
-          </Suspense>
-        );
-      }}
-    >
+    <Router base={base}>
       <Route path="/" component={IndexPage} />
       <Route path="/camera" component={CameraPage} />
       <Route path="/arithmetic" component={ArithmeticPage} />

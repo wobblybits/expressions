@@ -4,9 +4,9 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
-    "build": "NODE_ENV=production vinxi build",
-    "local": "rm -rf .vinxi .output node_modules/.vite node_modules/.cache && NODE_ENV=local vinxi build",
+    "dev": "DEPLOYMENT_TARGET=development vinxi dev",
+    "build": "DEPLOYMENT_TARGET=production vinxi build",
+    "local": "rm -rf .vinxi .output node_modules/.vite node_modules/.cache && DEPLOYMENT_TARGET=local vinxi build",
     "start": "npx serve .output/public"
   },
   "license": "MIT",

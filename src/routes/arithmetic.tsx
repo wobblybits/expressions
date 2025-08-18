@@ -9,7 +9,9 @@ const Composite: Component = () => {
       title="Composite Emotions" 
       description="Explore emotion combinations and matrices"
     >
-      <CompositePage />
+      <ClientOnly>
+        <CompositePage />
+      </ClientOnly>
     </PageLayout>
   );
 };
