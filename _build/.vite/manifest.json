@@ -1,187 +1,34 @@
 {
-  "_ClientOnly-B3hFWBc-.js": {
-    "file": "assets/ClientOnly-B3hFWBc-.js",
-    "name": "ClientOnly",
-    "imports": [
-      "_web-BjSrF1zk.js"
-    ]
-  },
-  "_Face-CMEODpwO.js": {
-    "file": "assets/Face-CMEODpwO.js",
-    "name": "Face",
-    "imports": [
-      "_web-BjSrF1zk.js",
-      "_ClientOnly-B3hFWBc-.js"
-    ]
-  },
-  "_PageLayout-DMiXyjle.js": {
-    "file": "assets/PageLayout-DMiXyjle.js",
-    "name": "PageLayout",
-    "imports": [
-      "_web-BjSrF1zk.js"
-    ]
-  },
-  "_TPS-DfqRdrRt.js": {
-    "file": "assets/TPS-DfqRdrRt.js",
-    "name": "TPS"
-  },
-  "__commonjsHelpers-Cpj98o6Y.js": {
-    "file": "assets/_commonjsHelpers-Cpj98o6Y.js",
-    "name": "_commonjsHelpers"
-  },
-  "_camera_utils-c8ZgCaOI.js": {
-    "file": "assets/camera_utils-c8ZgCaOI.js",
-    "name": "camera_utils",
-    "isDynamicEntry": true,
-    "imports": [
-      "__commonjsHelpers-Cpj98o6Y.js"
-    ]
-  },
-  "_face_mesh-C4n09Vz3.js": {
-    "file": "assets/face_mesh-C4n09Vz3.js",
-    "name": "face_mesh",
-    "isDynamicEntry": true,
-    "imports": [
-      "__commonjsHelpers-Cpj98o6Y.js"
-    ]
-  },
-  "_preload-helper-BrT8b0UT.js": {
-    "file": "assets/preload-helper-BrT8b0UT.js",
-    "name": "preload-helper"
-  },
-  "_web-BjSrF1zk.js": {
-    "file": "assets/web-BjSrF1zk.js",
-    "name": "web"
-  },
-  "src/features/camera/pages/CameraPage.tsx": {
-    "file": "assets/CameraPage-ByWXI35j.js",
-    "name": "CameraPage",
-    "src": "src/features/camera/pages/CameraPage.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_web-BjSrF1zk.js",
-      "_Face-CMEODpwO.js",
-      "_TPS-DfqRdrRt.js",
-      "_preload-helper-BrT8b0UT.js",
-      "_ClientOnly-B3hFWBc-.js"
-    ],
+  "_client-C_lhlbup.js": {
+    "file": "assets/client-C_lhlbup.js",
+    "name": "client",
     "dynamicImports": [
-      "_face_mesh-C4n09Vz3.js",
-      "_camera_utils-c8ZgCaOI.js"
-    ]
-  },
-  "src/features/emotions/pages/GamePage.tsx": {
-    "file": "assets/GamePage-CN8Av54i.js",
-    "name": "GamePage",
-    "src": "src/features/emotions/pages/GamePage.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_web-BjSrF1zk.js",
-      "_Face-CMEODpwO.js",
-      "_ClientOnly-B3hFWBc-.js"
-    ]
-  },
-  "src/features/pareidolia/pages/PareidoliaPage.tsx": {
-    "file": "assets/PareidoliaPage-_y8EO4Lv.js",
-    "name": "PareidoliaPage",
-    "src": "src/features/pareidolia/pages/PareidoliaPage.tsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_web-BjSrF1zk.js",
-      "_Face-CMEODpwO.js",
-      "_TPS-DfqRdrRt.js",
-      "_ClientOnly-B3hFWBc-.js"
-    ]
-  },
-  "src/routes/arithmetic.tsx?pick=default&pick=$css": {
-    "file": "assets/arithmetic-DPiPgd3Y.js",
-    "name": "arithmetic",
-    "src": "src/routes/arithmetic.tsx?pick=default&pick=$css",
-    "isEntry": true,
-    "isDynamicEntry": true,
-    "imports": [
-      "_PageLayout-DMiXyjle.js",
-      "_web-BjSrF1zk.js",
-      "_Face-CMEODpwO.js",
-      "_ClientOnly-B3hFWBc-.js"
-    ]
-  },
-  "src/routes/camera.tsx?pick=default&pick=$css": {
-    "file": "assets/camera-DX86GqO9.js",
-    "name": "camera",
-    "src": "src/routes/camera.tsx?pick=default&pick=$css",
-    "isEntry": true,
-    "isDynamicEntry": true,
-    "imports": [
-      "_preload-helper-BrT8b0UT.js",
-      "_web-BjSrF1zk.js",
-      "_PageLayout-DMiXyjle.js"
+      "src/app.tsx"
     ],
-    "dynamicImports": [
-      "src/features/camera/pages/CameraPage.tsx"
+    "css": [
+      "assets/client-D-KFFPt_.css"
     ]
   },
-  "src/routes/index.tsx?pick=default&pick=$css": {
-    "file": "assets/index-DBxOALFm.js",
-    "name": "index",
-    "src": "src/routes/index.tsx?pick=default&pick=$css",
-    "isEntry": true,
-    "isDynamicEntry": true,
-    "imports": [
-      "_web-BjSrF1zk.js",
-      "_PageLayout-DMiXyjle.js"
-    ]
+  "_client-D-KFFPt_.css": {
+    "file": "assets/client-D-KFFPt_.css",
+    "src": "_client-D-KFFPt_.css"
   },
-  "src/routes/pareidolia.tsx?pick=default&pick=$css": {
-    "file": "assets/pareidolia-D9409Gdm.js",
-    "name": "pareidolia",
-    "src": "src/routes/pareidolia.tsx?pick=default&pick=$css",
-    "isEntry": true,
+  "src/app.tsx": {
+    "file": "assets/app-Dz2QoZgw.js",
+    "name": "app",
+    "src": "src/app.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_preload-helper-BrT8b0UT.js",
-      "_web-BjSrF1zk.js",
-      "_ClientOnly-B3hFWBc-.js",
-      "_PageLayout-DMiXyjle.js"
-    ],
-    "dynamicImports": [
-      "src/features/pareidolia/pages/PareidoliaPage.tsx"
-    ]
-  },
-  "src/routes/transference.tsx?pick=default&pick=$css": {
-    "file": "assets/transference-CVEE5Iju.js",
-    "name": "transference",
-    "src": "src/routes/transference.tsx?pick=default&pick=$css",
-    "isEntry": true,
-    "isDynamicEntry": true,
-    "imports": [
-      "_preload-helper-BrT8b0UT.js",
-      "_web-BjSrF1zk.js",
-      "_ClientOnly-B3hFWBc-.js",
-      "_PageLayout-DMiXyjle.js"
-    ],
-    "dynamicImports": [
-      "src/features/emotions/pages/GamePage.tsx"
+      "_client-C_lhlbup.js"
     ]
   },
   "virtual:$vinxi/handler/client": {
-    "file": "assets/client-3i4bVxdQ.js",
+    "file": "assets/client-id5A6bb7.js",
     "name": "client",
     "src": "virtual:$vinxi/handler/client",
     "isEntry": true,
     "imports": [
-      "_web-BjSrF1zk.js",
-      "_preload-helper-BrT8b0UT.js"
-    ],
-    "dynamicImports": [
-      "src/routes/arithmetic.tsx?pick=default&pick=$css",
-      "src/routes/camera.tsx?pick=default&pick=$css",
-      "src/routes/index.tsx?pick=default&pick=$css",
-      "src/routes/pareidolia.tsx?pick=default&pick=$css",
-      "src/routes/transference.tsx?pick=default&pick=$css"
-    ],
-    "css": [
-      "assets/client-D-KFFPt_.css"
+      "_client-C_lhlbup.js"
     ]
   }
 }
