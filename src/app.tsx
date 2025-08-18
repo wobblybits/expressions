@@ -6,6 +6,7 @@ import "./index.css";
 const App: Component = () => {
   return (
     <Router
+      base={import.meta.env.SERVER_BASE_URL}
       root={props => (
         <Suspense fallback={<div id='loading'>Loading...</div>}>
           {props.children}

@@ -1,8 +1,6 @@
-import { Component, lazy } from 'solid-js';
-import ClientOnly from '../lib/ClientOnly';
+import { Component } from 'solid-js';
 import PageLayout from '../components/ui/PageLayout';
-
-const CompositePage = lazy(() => import('../features/emotions/pages/CompositePage'));
+import CompositePage from '../features/emotions/pages/CompositePage';
 
 const Composite: Component = () => {
   return (
@@ -10,18 +8,9 @@ const Composite: Component = () => {
       title="Composite Emotions" 
       description="Explore emotion combinations and matrices"
     >
-      <ClientOnly 
-        fallback={
-          <div id="loading">Loading...</div>
-        }
-      >
-        <CompositePage />
-      </ClientOnly>
+      <CompositePage />
     </PageLayout>
   );
 };
-
-// @ts-ignore
-Composite.ssr = false;
 
 export default Composite; 

@@ -27,7 +27,4 @@ const Game: Component = () => {
   );
 };
 
-// @ts-ignore
-Game.ssr = false;
-
 export default Game; 

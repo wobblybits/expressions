@@ -27,7 +27,4 @@ const Pareidolia: Component = () => {
   );
 };
 
-// @ts-ignore
-Pareidolia.ssr = false;
-
 export default Pareidolia; 
