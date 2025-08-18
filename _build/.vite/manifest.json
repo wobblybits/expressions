@@ -1,7 +1,10 @@
 {
-  "_GPU-DfCXmufw.js": {
-    "file": "assets/GPU-DfCXmufw.js",
-    "name": "GPU"
+  "_TPS-D0ADRJpB.js": {
+    "file": "assets/TPS-D0ADRJpB.js",
+    "name": "TPS",
+    "imports": [
+      "_client-CBWUQPxk.js"
+    ]
   },
   "__commonjsHelpers-Cpj98o6Y.js": {
     "file": "assets/_commonjsHelpers-Cpj98o6Y.js",
@@ -15,12 +18,8 @@
       "__commonjsHelpers-Cpj98o6Y.js"
     ]
   },
-  "_client-B7H5IjMu.css": {
-    "file": "assets/client-B7H5IjMu.css",
-    "src": "_client-B7H5IjMu.css"
-  },
-  "_client-jDQGuH0I.js": {
-    "file": "assets/client-jDQGuH0I.js",
+  "_client-CBWUQPxk.js": {
+    "file": "assets/client-CBWUQPxk.js",
     "name": "client",
     "dynamicImports": [
       "src/features/camera/pages/CameraPage.tsx",
@@ -28,8 +27,12 @@
       "src/routes/transference.tsx"
     ],
     "css": [
-      "assets/client-B7H5IjMu.css"
+      "assets/client-CEAwrV9_.css"
     ]
+  },
+  "_client-CEAwrV9_.css": {
+    "file": "assets/client-CEAwrV9_.css",
+    "src": "_client-CEAwrV9_.css"
   },
   "_face_mesh-C4n09Vz3.js": {
     "file": "assets/face_mesh-C4n09Vz3.js",
@@ -40,13 +43,13 @@
     ]
   },
   "src/features/camera/pages/CameraPage.tsx": {
-    "file": "assets/CameraPage-Ci3AEoFb.js",
+    "file": "assets/CameraPage-x9Jp_JM2.js",
     "name": "CameraPage",
     "src": "src/features/camera/pages/CameraPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-jDQGuH0I.js",
-      "_GPU-DfCXmufw.js"
+      "_client-CBWUQPxk.js",
+      "_TPS-D0ADRJpB.js"
     ],
     "dynamicImports": [
       "_face_mesh-C4n09Vz3.js",
@@ -54,55 +57,55 @@
     ]
   },
   "src/features/emotions/pages/GamePage.tsx": {
-    "file": "assets/GamePage-D6oOzmzZ.js",
+    "file": "assets/GamePage-Bn8AvoE3.js",
     "name": "GamePage",
     "src": "src/features/emotions/pages/GamePage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-jDQGuH0I.js"
+      "_client-CBWUQPxk.js"
     ]
   },
   "src/features/pareidolia/pages/PareidoliaPage.tsx": {
-    "file": "assets/PareidoliaPage-DQ09BCqk.js",
+    "file": "assets/PareidoliaPage-Bo1HMINh.js",
     "name": "PareidoliaPage",
     "src": "src/features/pareidolia/pages/PareidoliaPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-jDQGuH0I.js",
-      "_GPU-DfCXmufw.js"
+      "_client-CBWUQPxk.js",
+      "_TPS-D0ADRJpB.js"
     ]
   },
   "src/routes/pareidolia.tsx": {
-    "file": "assets/pareidolia-BC1hZqkD.js",
+    "file": "assets/pareidolia-BGH1d-PO.js",
     "name": "pareidolia",
     "src": "src/routes/pareidolia.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-jDQGuH0I.js"
+      "_client-CBWUQPxk.js"
     ],
     "dynamicImports": [
       "src/features/pareidolia/pages/PareidoliaPage.tsx"
     ]
   },
   "src/routes/transference.tsx": {
-    "file": "assets/transference-B5BGnWHf.js",
+    "file": "assets/transference-CpujuXBJ.js",
     "name": "transference",
     "src": "src/routes/transference.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-jDQGuH0I.js"
+      "_client-CBWUQPxk.js"
     ],
     "dynamicImports": [
       "src/features/emotions/pages/GamePage.tsx"
     ]
   },
   "virtual:$vinxi/handler/client": {
-    "file": "assets/client-DYHsFEfr.js",
+    "file": "assets/client-CmMlDz50.js",
     "name": "client",
     "src": "virtual:$vinxi/handler/client",
     "isEntry": true,
     "imports": [
-      "_client-jDQGuH0I.js"
+      "_client-CBWUQPxk.js"
     ]
   }
 }
