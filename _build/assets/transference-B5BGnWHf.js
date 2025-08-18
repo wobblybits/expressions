@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/GamePage-D6oOzmzZ.js","assets/client-jDQGuH0I.js","assets/client-B7H5IjMu.css"])))=>i.map(i=>d[i]);
+import{c as e,C as t,l as a,P as o,_ as r}from"./client-jDQGuH0I.js";const n=a(()=>r(()=>import("./GamePage-D6oOzmzZ.js"),__vite__mapDeps([0,1,2]))),m=()=>e(o,{title:"Emotion Game",description:"Interactive emotion detection game",get children(){return e(t,{get children(){return e(n,{})}})}});export{m as default};
