@@ -27,6 +27,7 @@ const Pareidolia: Component<{emotionModel: EmotionModel}> = (props) => {
     let originalImageData: ImageData | undefined;
     let currentEmotionLevels = NoEmotion;
     let offsetEmotionLevels = NoEmotion;
+    let isThinking = false;
 
     const normalizeLandmarks = (landmarks: number[]) => {
         const currentWidth = imageDimensions().width;
@@ -427,34 +428,40 @@ const Pareidolia: Component<{emotionModel: EmotionModel}> = (props) => {
                 ></svg>
             </div>
             <Controls title="Pareidolia" emotionModel={emotionModel} callback={async (emotionLevels) => {
+                // Skip if already processing
+                if (isThinking || !imageTPS) return;
+                
                 currentEmotionLevels = emotionLevels;
                 const adjustedEmotionLevels = {...currentEmotionLevels};
                 for (var emotion in offsetEmotionLevels) {
                     adjustedEmotionLevels[emotion] -= offsetEmotionLevels[emotion];
                 }
-                if (imageTPS) {
-                    try {
-                        // Try GPU rendering first
-                        await imageTPS.drawGPU(adjustedEmotionLevels, originalImageData);
-                    } catch (error) {
-                        console.error('GPU rendering failed, using CPU fallback:', error);
-                        // If GPU fails, fall back to the original CPU method
-                        const newImageData = new Uint8ClampedArray(imageTPS.canvas.width * imageTPS.canvas.height * 4).fill(0);
-                        const imageWidth = imageDimensions().width;
-                        for (var y = 0; y < imageTPS.canvas.height; y++) {
-                            for (var x = 0; x < imageTPS.canvas.width; x++) {
-                                if (imageTPS.mask[y * imageTPS.canvas.width + x] == 0) continue;
-                                const transformed = imageTPS.transformXY(adjustedEmotionLevels, x + imageTPS.imageBBox.minX, y + imageTPS.imageBBox.minY);
-                                const index = (y * imageTPS.canvas.width + x) * 4;
-                                const oldIndex = (Math.round(transformed[1]) * imageWidth + Math.round(transformed[0])) * 4;
-                                newImageData[index] = originalImageData.data[oldIndex];
-                                newImageData[index + 1] = originalImageData.data[oldIndex + 1];
-                                newImageData[index + 2] = originalImageData.data[oldIndex + 2];
-                                newImageData[index + 3] = originalImageData.data[oldIndex + 3];
-                            }
+                
+                isThinking = true;
+                
+                try {
+                    // Try GPU rendering first
+                    await imageTPS.drawGPU(adjustedEmotionLevels, originalImageData);
+                } catch (error) {
+                    console.error('GPU rendering failed, using CPU fallback:', error);
+                    // CPU fallback code stays the same...
+                    const newImageData = new Uint8ClampedArray(imageTPS.canvas.width * imageTPS.canvas.height * 4).fill(0);
+                    const imageWidth = imageDimensions().width;
+                    for (var y = 0; y < imageTPS.canvas.height; y++) {
+                        for (var x = 0; x < imageTPS.canvas.width; x++) {
+                            if (imageTPS.mask[y * imageTPS.canvas.width + x] == 0) continue;
+                            const transformed = imageTPS.transformXY(adjustedEmotionLevels, x + imageTPS.imageBBox.minX, y + imageTPS.imageBBox.minY);
+                            const index = (y * imageTPS.canvas.width + x) * 4;
+                            const oldIndex = (Math.round(transformed[1]) * imageWidth + Math.round(transformed[0])) * 4;
+                            newImageData[index] = originalImageData.data[oldIndex];
+                            newImageData[index + 1] = originalImageData.data[oldIndex + 1];
+                            newImageData[index + 2] = originalImageData.data[oldIndex + 2];
+                            newImageData[index + 3] = originalImageData.data[oldIndex + 3];
                         }
-                        imageTPS.ctx.putImageData(new ImageData(newImageData, imageTPS.canvas.width, imageTPS.canvas.height), 0, 0);
                     }
+                    imageTPS.ctx.putImageData(new ImageData(newImageData, imageTPS.canvas.width, imageTPS.canvas.height), 0, 0);
+                } finally {
+                    isThinking = false;
                 }
             }}>
                 <h4>{featureName() in features ? features[featureName()].name : "Upload an Image"}</h4>

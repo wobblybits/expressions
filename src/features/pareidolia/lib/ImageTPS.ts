@@ -95,10 +95,12 @@ class ImageTPS {
     baseTransform: Map<string, number[]>;
     imagePoints: number[][];
     modelPoints: number[][];
+    allPoints: number[][];
     imageBBox: BBox;
     modelBBox: BBox;
     nilpotentTPS: TPS;
     baseTPS: TPS;
+    emotionTPS: TPS;
     baseEmotionLevels: EmotionLevels;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
@@ -114,11 +116,13 @@ class ImageTPS {
     offscreenCtx: OffscreenCanvasRenderingContext2D;
     processingScale: number;
     imageData: ImageData;
+    skipLandmarks: number;
 
     constructor(imageLandmarks: Map<string, number[]>, emotionLevels: EmotionLevels, emotionModel: EmotionModel) {
         this.emotionModel = emotionModel;
         this.imageLandmarks = imageLandmarks;
         this.processingScale = 1; // Can be adjusted for performance
+        this.skipLandmarks = 4;
 
         this.imagePoints = [];
         this.modelPoints = [];
@@ -136,10 +140,16 @@ class ImageTPS {
             this.modelPoints.push([baseEmotion[index*3] + meanFace[index*3], baseEmotion[index*3+1] - meanFace[index*3+1], baseEmotion[index*3+2] + meanFace[index*3+2]]);
         }
 
+        this.allPoints = [];
+        for (let i = 0; i < meanFace.length; i+=3*this.skipLandmarks) {
+            this.allPoints.push([baseEmotion[i] + meanFace[i], baseEmotion[i+1] - meanFace[i+1], baseEmotion[i+2] + meanFace[i+2]]);
+        }
+
         this.emotionTransforms = [];
         this.emotionModel = emotionModel;
 
         this.baseTPS = new TPS(this.modelPoints, this.imagePoints);
+        this.emotionTPS = new TPS(this.allPoints, this.allPoints);
         this.nilpotentTPS = new TPS(this.imagePoints, this.imagePoints);
 
         this.imageSilhouette = [];
@@ -222,7 +232,7 @@ class ImageTPS {
             
             this.gpu.createBuffers({
                 baseNumPoints: this.imagePoints.length,
-                distortNumPoints: this.imagePoints.length, // Use same for simplicity
+                distortNumPoints: this.allPoints.length,
                 imageWidth: this.imageData.width,
                 imageHeight: this.imageData.height,
                 faceMinY: this.imageBBox.minY,
@@ -234,15 +244,15 @@ class ImageTPS {
             // Update GPU buffers with base data
             this.gpu.updateBuffer(this.gpu.meshPointsBuffer, new Float32Array(this.modelPoints.map((d) => d.slice(0,2)).flat()));
             this.gpu.updateBuffer(this.gpu.imagePointsBuffer, new Float32Array(this.imagePoints.map((d) => d.slice(0,2)).flat()));
-            this.gpu.updateBuffer(this.gpu.distortPointsBuffer, new Float32Array(this.imagePoints.map((d) => d.slice(0,2)).flat()));
+            this.gpu.updateBuffer(this.gpu.distortPointsBuffer, new Float32Array(this.allPoints.map((d) => d.slice(0,2)).flat()));
             this.gpu.updateBuffer(this.gpu.modelPointsBuffer, new Float32Array(this.modelPoints.map((d) => d.slice(0,2)).flat()));
             
             // Update base coefficients
             this.gpu.updateBaseCoeffs(
-                this.baseTPS.forwardParameters.Xc,
-                this.baseTPS.forwardParameters.Yc,
                 this.baseTPS.inverseParameters.Xc,
                 this.baseTPS.inverseParameters.Yc,
+                this.baseTPS.forwardParameters.Xc,
+                this.baseTPS.forwardParameters.Yc,
             );
             
             // Convert image data to uint32 array
@@ -260,7 +270,7 @@ class ImageTPS {
             
             this.gpu.updateUniforms({
                 baseNumPoints: this.imagePoints.length,
-                distortNumPoints: this.imagePoints.length,
+                distortNumPoints: this.allPoints.length,
                 imageWidth: this.imageData.width,
                 imageHeight: this.imageData.height,
                 faceMinY: this.imageBBox.minY,
@@ -336,22 +346,21 @@ class ImageTPS {
             // Create emotion-based transformation TPS
             const emotionPoints = [];
             const emotion = this.emotionModel.calculateCompositeEmotion(emotionLevels);
-            for (const [key, value] of this.imageLandmarks) {
-                const index = parseInt(key);
-                emotionPoints.push([emotion[index*3] + meanFace[index*3], emotion[index*3+1] - meanFace[index*3+1], emotion[index*3+2] + meanFace[index*3+2]]);
+            for (var i=0; i < emotion.length; i+=3*this.skipLandmarks) {
+                emotionPoints.push([emotion[i] + meanFace[i], emotion[i+1] - meanFace[i+1], emotion[i+2] + meanFace[i+2]]);
             }
-            
-            const emotionTPS = new TPS(this.modelPoints, emotionPoints);
+            this.emotionTPS = new TPS(emotionPoints, this.allPoints);
+            //this.emotionTPS.updateParameters(emotionPoints);
             
             // Update GPU with emotion transformation coefficients
-            this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, emotionTPS.inverseParameters.Xc, emotionTPS.inverseParameters.Yc);
+            this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, this.emotionTPS.inverseParameters.Xc, this.emotionTPS.inverseParameters.Yc);
             
             const faceWidth = this.imageBBox.maxX - this.imageBBox.minX;
             const faceHeight = this.imageBBox.maxY - this.imageBBox.minY;
             
             this.gpu.updateUniforms({
                 baseNumPoints: this.imagePoints.length,
-                distortNumPoints: this.imagePoints.length,
+                distortNumPoints: this.allPoints.length,
                 imageWidth: this.imageData.width,
                 imageHeight: this.imageData.height,
                 faceMinY: this.imageBBox.minY,
