@@ -1,2 +1,0 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/PareidoliaPage-wL4teiDW.js","assets/client-CMB3D6Oh.js","assets/client-B7H5IjMu.css","assets/TPS-DfqRdrRt.js"])))=>i.map(i=>d[i]);
-import{c as e,C as a,l as t,P as i,_ as r}from"./client-CMB3D6Oh.js";const o=t(()=>r(()=>import("./PareidoliaPage-wL4teiDW.js"),__vite__mapDeps([0,1,2,3]))),s=()=>e(i,{title:"Pareidolia Visualization",description:"See faces in abstract patterns and emotions",get children(){return e(a,{get children(){return e(o,{})}})}});export{s as default};

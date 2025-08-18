@@ -1,6 +1,6 @@
 {
-  "_TPS-DfqRdrRt.js": {
-    "file": "assets/TPS-DfqRdrRt.js",
+  "_TPS-Bg4rei_M.js": {
+    "file": "assets/TPS-Bg4rei_M.js",
     "name": "TPS"
   },
   "__commonjsHelpers-Cpj98o6Y.js": {
@@ -19,8 +19,8 @@
     "file": "assets/client-B7H5IjMu.css",
     "src": "_client-B7H5IjMu.css"
   },
-  "_client-CMB3D6Oh.js": {
-    "file": "assets/client-CMB3D6Oh.js",
+  "_client-BMihTIUX.js": {
+    "file": "assets/client-BMihTIUX.js",
     "name": "client",
     "dynamicImports": [
       "src/features/camera/pages/CameraPage.tsx",
@@ -40,13 +40,13 @@
     ]
   },
   "src/features/camera/pages/CameraPage.tsx": {
-    "file": "assets/CameraPage-DjTmLLgv.js",
+    "file": "assets/CameraPage-BEZuTC7n.js",
     "name": "CameraPage",
     "src": "src/features/camera/pages/CameraPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-CMB3D6Oh.js",
-      "_TPS-DfqRdrRt.js"
+      "_client-BMihTIUX.js",
+      "_TPS-Bg4rei_M.js"
     ],
     "dynamicImports": [
       "_face_mesh-C4n09Vz3.js",
@@ -54,55 +54,55 @@
     ]
   },
   "src/features/emotions/pages/GamePage.tsx": {
-    "file": "assets/GamePage-CX-nNGdB.js",
+    "file": "assets/GamePage-BJQ9idxC.js",
     "name": "GamePage",
     "src": "src/features/emotions/pages/GamePage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-CMB3D6Oh.js"
+      "_client-BMihTIUX.js"
     ]
   },
   "src/features/pareidolia/pages/PareidoliaPage.tsx": {
-    "file": "assets/PareidoliaPage-wL4teiDW.js",
+    "file": "assets/PareidoliaPage-EMTWGT07.js",
     "name": "PareidoliaPage",
     "src": "src/features/pareidolia/pages/PareidoliaPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-CMB3D6Oh.js",
-      "_TPS-DfqRdrRt.js"
+      "_client-BMihTIUX.js",
+      "_TPS-Bg4rei_M.js"
     ]
   },
   "src/routes/pareidolia.tsx": {
-    "file": "assets/pareidolia-CUivlTKC.js",
+    "file": "assets/pareidolia-xpa6NB1a.js",
     "name": "pareidolia",
     "src": "src/routes/pareidolia.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-CMB3D6Oh.js"
+      "_client-BMihTIUX.js"
     ],
     "dynamicImports": [
       "src/features/pareidolia/pages/PareidoliaPage.tsx"
     ]
   },
   "src/routes/transference.tsx": {
-    "file": "assets/transference-OykTnga3.js",
+    "file": "assets/transference-C_6hZ3na.js",
     "name": "transference",
     "src": "src/routes/transference.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-CMB3D6Oh.js"
+      "_client-BMihTIUX.js"
     ],
     "dynamicImports": [
       "src/features/emotions/pages/GamePage.tsx"
     ]
   },
   "virtual:$vinxi/handler/client": {
-    "file": "assets/client-Cbm5dpCw.js",
+    "file": "assets/client-CHmJchyl.js",
     "name": "client",
     "src": "virtual:$vinxi/handler/client",
     "isEntry": true,
     "imports": [
-      "_client-CMB3D6Oh.js"
+      "_client-BMihTIUX.js"
     ]
   }
 }
