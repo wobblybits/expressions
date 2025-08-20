@@ -1,6 +1,6 @@
 import { Component, createSignal } from "solid-js";
 import PareidoliaCore from "../../../components/pareidolia/PareidoliaCore";
-import Controls from "../../../components/mesh/Controls";
+import Controls from "../../../components/ui/Controls";
 import EmotionModel, { NoEmotion } from "../lib/EmotionModel";
 import ImageTPS from "../../pareidolia/lib/EmotionTPS";
 

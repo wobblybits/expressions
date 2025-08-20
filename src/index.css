@@ -452,6 +452,61 @@ main p a {
   color: brown !important;
 }
 
+.explainer {
+  flex-grow: 1;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: white;
+  padding: 1em 1em 3em;
+}
+
+.explainer p {
+  border: none;
+}
+
+.explainer ul {
+  list-style-type: square;
+  padding: 1em 4em;
+  margin-bottom: .5em;
+}
+
+.explainer li {
+  margin-bottom: 1em;
+}
+
+.explainer img {
+  border: 1px solid var(--border-color);
+}
+
+.explainer .image-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1em;
+}
+
+.explainer .image-row div {
+  aspect-ratio: 1/1;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.explainer .image-row img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  height: 100%;
+}
+
+code {
+  background: #ddd;
+  padding: .1em .4em;
+  color: #555;
+  border-radius: 5px;
+}
+
 .card {
     /* width: 26vw; */
     padding: 0 1em;

@@ -8,7 +8,6 @@ const Synth: Component = () => {
       title="Composite Emotions" 
       description="Explore emotion combinations and matrices"
     >
-      <h2>Hello World</h2>
       <SynthPage />
     </PageLayout>
   );
