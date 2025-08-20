@@ -20,7 +20,9 @@ export default createHandler(() => (
         <body>
           <div id="app">{children}</div>
           {scripts}
-          <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1f83056651704bc6a1123ad767ae30ac"}'></script>
+          {import.meta.env.DEPLOYMENT_TARGET === 'production' && (
+            <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1f83056651704bc6a1123ad767ae30ac"}'></script>
+          )}
         </body>
       </html>
     )}

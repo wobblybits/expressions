@@ -2,7 +2,7 @@ import type { Component } from 'solid-js';
 import ExpressionModel from '../lib/ExpressionModel';
 import EmotionModel, { NoEmotion } from '../lib/EmotionModel';
 import { For, createSignal, createEffect, onMount } from 'solid-js';
-import Face from '../../../components/ui/face/Face';
+import Face from '../../../components/mesh/Face';
 import ClientOnly from '../../../lib/ClientOnly';
 import Scene from '../../../lib/Scene';
 

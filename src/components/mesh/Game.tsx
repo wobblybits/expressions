@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import ExpressionModel from '../../features/emotions/lib/ExpressionModel';
 import { NoEmotion, type EmotionLevels } from '../../features/emotions/lib/EmotionModel';
 import Scene from '../../lib/Scene';
-import Face from '../ui/face/Face';
+import Face from './Face';
 import { For, createSignal } from 'solid-js';
 import Agent from '../../features/emotions/lib/Agent';
 

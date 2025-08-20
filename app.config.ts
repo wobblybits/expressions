@@ -30,7 +30,7 @@ export default defineConfig({
       serveStatic: true,
       prerender: {
         autoSubfolderIndex: false,
-        routes: ["/", "/camera", "/arithmetic", "/pareidolia", "/transference"],
+        routes: ["/", "/camera", "/arithmetic", "/pareidolia", "/transference", "/synth"],
       }
     }
   }),

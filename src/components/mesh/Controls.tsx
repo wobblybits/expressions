@@ -1,6 +1,6 @@
 import { Component, createSignal, JSX } from "solid-js";
 import ExpressionModel from "../../features/emotions/lib/ExpressionModel";
-import Face from "../ui/face/Face";
+import Face from "./Face";
 import EmotionModel, { NoEmotion, type EmotionLevels } from "../../features/emotions/lib/EmotionModel";
 import { For } from "solid-js";
 

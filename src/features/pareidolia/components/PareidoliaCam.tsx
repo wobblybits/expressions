@@ -1,8 +1,8 @@
 import { Component, createSignal } from "solid-js";
-import PareidoliaCore from "./PareidoliaCore";
-import CameraTPS from "../../features/camera/lib/CameraTPS";
-import FaceMeshCamera from "../../features/camera/lib/Camera";
-import Face from "../mesh/Face";
+import PareidoliaCore from "../../../components/pareidolia/PareidoliaCore";
+import CameraTPS from "../../camera/lib/CameraTPS";
+import FaceMeshCamera from "../../camera/lib/Camera";
+import Face from "../../../components/mesh/Face";
 
 const PareidoliaCam: Component<{}> = (props) => {
     let cameraLandmarks: number[][] | undefined;
