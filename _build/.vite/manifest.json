@@ -1,9 +1,9 @@
 {
-  "_TPS-C8mR9rjN.js": {
-    "file": "assets/TPS-C8mR9rjN.js",
+  "_TPS-CRZ7oi5J.js": {
+    "file": "assets/TPS-CRZ7oi5J.js",
     "name": "TPS",
     "imports": [
-      "_client-CA75qaa4.js"
+      "_client-CvRCmKVG.js"
     ]
   },
   "__commonjsHelpers-Cpj98o6Y.js": {
@@ -18,12 +18,12 @@
       "__commonjsHelpers-Cpj98o6Y.js"
     ]
   },
-  "_client-BfDPodcj.css": {
-    "file": "assets/client-BfDPodcj.css",
-    "src": "_client-BfDPodcj.css"
+  "_client-Cmd4Vtb2.css": {
+    "file": "assets/client-Cmd4Vtb2.css",
+    "src": "_client-Cmd4Vtb2.css"
   },
-  "_client-CA75qaa4.js": {
-    "file": "assets/client-CA75qaa4.js",
+  "_client-CvRCmKVG.js": {
+    "file": "assets/client-CvRCmKVG.js",
     "name": "client",
     "dynamicImports": [
       "src/features/camera/pages/CameraPage.tsx",
@@ -31,7 +31,7 @@
       "src/features/emotions/pages/GamePage.tsx"
     ],
     "css": [
-      "assets/client-BfDPodcj.css"
+      "assets/client-Cmd4Vtb2.css"
     ]
   },
   "_face_mesh-C4n09Vz3.js": {
@@ -43,13 +43,13 @@
     ]
   },
   "src/features/camera/pages/CameraPage.tsx": {
-    "file": "assets/CameraPage-8RT2121W.js",
+    "file": "assets/CameraPage-C6jl9j9D.js",
     "name": "CameraPage",
     "src": "src/features/camera/pages/CameraPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-CA75qaa4.js",
-      "_TPS-C8mR9rjN.js"
+      "_client-CvRCmKVG.js",
+      "_TPS-CRZ7oi5J.js"
     ],
     "dynamicImports": [
       "_face_mesh-C4n09Vz3.js",
@@ -57,31 +57,31 @@
     ]
   },
   "src/features/emotions/pages/GamePage.tsx": {
-    "file": "assets/GamePage-BOHR-J_A.js",
+    "file": "assets/GamePage-BmxbWcE2.js",
     "name": "GamePage",
     "src": "src/features/emotions/pages/GamePage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-CA75qaa4.js"
+      "_client-CvRCmKVG.js"
     ]
   },
   "src/features/pareidolia/pages/PareidoliaPage.tsx": {
-    "file": "assets/PareidoliaPage-DzcPoxa7.js",
+    "file": "assets/PareidoliaPage-BqWVz-3_.js",
     "name": "PareidoliaPage",
     "src": "src/features/pareidolia/pages/PareidoliaPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-CA75qaa4.js",
-      "_TPS-C8mR9rjN.js"
+      "_client-CvRCmKVG.js",
+      "_TPS-CRZ7oi5J.js"
     ]
   },
   "virtual:$vinxi/handler/client": {
-    "file": "assets/client-DidjPmT2.js",
+    "file": "assets/client-DttiJeDe.js",
     "name": "client",
     "src": "virtual:$vinxi/handler/client",
     "isEntry": true,
     "imports": [
-      "_client-CA75qaa4.js"
+      "_client-CvRCmKVG.js"
     ]
   }
 }
