@@ -3,7 +3,6 @@ import EmotionModel from "../../emotions/lib/EmotionModel";
 import { BaseTPS, type TPSTransformationPoints } from "../../../tps/ImageTPS";
 import TPS from "../../../tps/TPS";
 import meanFace from "../../../data/mean.json";
-import { getBBox } from '../../../tps/utils';
 
 class ImageTPS extends BaseTPS {
     emotionModel: EmotionModel;
@@ -40,8 +39,7 @@ class ImageTPS extends BaseTPS {
         const baseEmotion = emotionModel.calculateCompositeEmotion(this.baseEmotionLevels);
         
         // Build model points from emotion + mean face
-        for (const [key, value] of imageLandmarks) {
-            const index = parseInt(key);
+        for (const [index] of imageLandmarks) {
             this.modelPoints.push([baseEmotion[index*3] + meanFace[index*3], baseEmotion[index*3+1] - meanFace[index*3+1], baseEmotion[index*3+2] + meanFace[index*3+2]]);
         }
 
@@ -216,8 +214,7 @@ class ImageTPS extends BaseTPS {
         let emotionPoints = [];
 
         const emotion = this.emotionModel.calculateCompositeEmotion(emotionLevels);
-        for (const [key, value] of this.imageLandmarks) {
-            const index = parseInt(key);
+        for (const [index, value] of this.imageLandmarks) {
             emotionPoints.push([emotion[index*3] + meanFace[index*3], emotion[index*3+1] - meanFace[index*3+1], emotion[index*3+2] + meanFace[index*3+2]]);
         }
 

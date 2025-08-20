@@ -1,11 +1,11 @@
 import type { Component } from 'solid-js';
 import * as THREE from 'three';
-import ExpressionModel from '../lib/ExpressionModel';
-import { NoEmotion, type EmotionLevels } from '../lib/EmotionModel';
-import Scene from '../../../lib/Scene';
-import Face from '../../../components/ui/face/Face';
-import { For, createSignal, onMount } from 'solid-js';
-import Agent from '../lib/Agent';
+import ExpressionModel from '../../features/emotions/lib/ExpressionModel';
+import { NoEmotion, type EmotionLevels } from '../../features/emotions/lib/EmotionModel';
+import Scene from '../../lib/Scene';
+import Face from '../ui/face/Face';
+import { For, createSignal } from 'solid-js';
+import Agent from '../../features/emotions/lib/Agent';
 
 let learningRate = 1;
 let updateInterval = 400;
@@ -74,41 +74,36 @@ const Game: Component<{ id: string, width: number, height: number, expressionMod
         
         // Calculate the world space position of the mouse before zoom
         const worldMouseBefore = mouseVector.clone();
-        
-        // Apply zoom to camera frustum
-        scene.camera.top *= zoomFactor;
-        scene.camera.bottom *= zoomFactor;
-        scene.camera.left *= zoomFactor;
-        scene.camera.right *= zoomFactor;
-        scene.camera.updateProjectionMatrix();
-        
-        // Calculate the world space position of the mouse after zoom
-        mouseVector.set(mouseX, mouseY, 0);
-        mouseVector.unproject(scene.camera);
-        mouseVector.z = 0;
-        
-        // Adjust camera position to keep the mouse point fixed
-        scene.camera.position.x += worldMouseBefore.x - mouseVector.x;
-        scene.camera.position.y += worldMouseBefore.y - mouseVector.y;
-        
-        // Update zoom variable
-        zoom = newZoom;
-    });
-    // const pointLight = new THREE.PointLight( 0x224433, 15, 15, .5 );
-    // pointLight.position.set( ...([1.25 * (props.gridSize - 1), 2.5 * (props.gridSize - 1), 10]));
-    // scene.scene.add( pointLight );
 
-    const expressionModel = props.expressionModel;
+        if (newZoom >= 20) {
+            scene.camera.top = scene.camera.right = 2.5 * props.gridSize;
+            scene.camera.bottom =scene.camera.left = -2.5 * props.gridSize;
+            //scene.camera.position.set( ...([2.5 * (props.gridSize - 1), 2.5 * (props.gridSize - 1), 10]) );        
+        } else {
+            scene.camera.top *= zoomFactor;
+            scene.camera.bottom *= zoomFactor;
+            scene.camera.left *= zoomFactor;
+            scene.camera.right *= zoomFactor;
+        
+            mouseVector.set(mouseX, mouseY, 0);
+            mouseVector.unproject(scene.camera);
+            mouseVector.z = 0;
+            
+            scene.camera.position.x += worldMouseBefore.x - mouseVector.x;
+            scene.camera.position.y += worldMouseBefore.y - mouseVector.y;
+            zoom = newZoom;
+        }
+        scene.camera.updateProjectionMatrix();
+    });
 
     let agents = [];
     let timeDelta = 0;
     let lastTimeChecked = performance.now();
     let targetTime = 0;
-    let isUpdating = false;
     let isInitialized = false;
 
     // Create web worker for agent initialization
-    const worker = new Worker(new URL('../lib/AgentWorker.ts', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('../../features/emotions/lib/AgentWorker.ts', import.meta.url), { type: 'module' });
 
     // Handle worker messages
     worker.onmessage = (e) => {

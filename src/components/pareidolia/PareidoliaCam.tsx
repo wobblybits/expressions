@@ -1,7 +1,7 @@
 import { Component, createSignal } from "solid-js";
 import PareidoliaCore from "../../../components/ui/pareidolia/PareidoliaCore";
-import CameraTPS from "../../camera/lib/CameraTPS";
-import FaceMeshCamera from "../../camera/lib/Camera";
+import CameraTPS from "../lib/CameraTPS";
+import FaceMeshCamera from "../lib/Camera";
 import TPS from "../../../tps/TPS";
 import Face from "../../../components/ui/face/Face";
 

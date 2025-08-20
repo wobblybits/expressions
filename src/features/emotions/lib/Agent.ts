@@ -179,7 +179,7 @@ class Agent {
             const pupil = expression.children[i];
             pupil.position.set(pupil.position.x + this.rotation[1] * .2, pupil.position.y + this.rotation[0] * .3, pupil.position.z - Math.abs(this.rotation[1] * .1));
         }
-        expression.rotation.set(...this.rotation);
+        expression.rotation.set(this.rotation[0], this.rotation[1], this.rotation[2]);
         expression.position.set(this.column*5, this.row*5, 0);
         return expression;
     }

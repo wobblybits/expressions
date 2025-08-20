@@ -1,8 +1,8 @@
 import { Component, createSignal } from "solid-js";
-import PareidoliaCore from "../../../components/ui/pareidolia/PareidoliaCore";
-import Controls from "./Controls";
-import EmotionModel, { NoEmotion } from "../lib/EmotionModel";
-import ImageTPS from "../../pareidolia/lib/EmotionTPS";
+import PareidoliaCore from "../ui/pareidolia/PareidoliaCore";
+import Controls from "../emotions/Controls";
+import EmotionModel, { NoEmotion } from "../../features/emotions/lib/EmotionModel";
+import ImageTPS from "../../features/pareidolia/lib/EmotionTPS";
 
 const Pareidolia: Component<{emotionModel: EmotionModel}> = (props) => {
     const { emotionModel } = props;

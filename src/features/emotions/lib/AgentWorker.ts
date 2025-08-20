@@ -1,5 +1,3 @@
-// Enhanced Web Worker for agent creation and updates
-import { NoEmotion } from './EmotionModel';
 import Agent from './Agent';
 
 // Global variables for the worker
