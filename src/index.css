@@ -454,10 +454,25 @@ main p a {
 
 .explainer {
   flex-grow: 1;
-  max-height: 85vh;
+  max-height: 80vh;
   overflow-y: auto;
   background: white;
-  padding: 1em 1em 3em;
+  padding: 1em 1em 0;
+  margin-bottom: 2em;
+}
+
+.explainer h2 {
+  margin-top: .5em;
+  font-size: var(--font-size-large);
+  font-weight: 550;
+  margin-left: .75rem;
+}
+
+.explainer h2:before {
+  content: "— ";
+}
+.explainer h2:after {
+  /* content: " —"; */
 }
 
 .explainer p {
@@ -467,15 +482,15 @@ main p a {
 .explainer ul {
   list-style-type: square;
   padding: 1em 4em;
-  margin-bottom: .5em;
 }
 
-.explainer li {
+.explainer li:not(:last-child) {
   margin-bottom: 1em;
 }
 
 .explainer img {
   border: 1px solid var(--border-color);
+  margin: 1em auto;
 }
 
 .explainer .image-row {
@@ -498,6 +513,24 @@ main p a {
   transform: translate(-50%, -50%);
   width: auto;
   height: 100%;
+  margin: 0;
+}
+
+.explainer .footer-link {
+  display: block;
+  margin: 2em auto 1em;
+  padding-top: .5em;
+  text-align: right;
+  text-decoration: none;
+  text-decoration: underline;
+  border-top: 1px solid var(--border-color);
+}
+.explainer .footer-link:after {
+  content: "→";
+  margin: .5em;
+  display: inline-block;
+  text-decoration: none !important;
+  font-size: var(--font-size-large);
 }
 
 code {
