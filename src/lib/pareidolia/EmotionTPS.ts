@@ -1,10 +1,10 @@
-import { NoEmotion, type EmotionLevels } from "../../emotions/lib/EmotionModel";
-import EmotionModel from "../../emotions/lib/EmotionModel";
-import { BaseTPS, type TPSTransformationPoints } from "../../../tps/ImageTPS";
-import TPS from "../../../tps/TPS";
-import meanFace from "../../../data/mean.json";
+import { NoEmotion, type EmotionLevels } from "../EmotionModel";
+import EmotionModel from "../EmotionModel";
+import { BaseTPS, type TPSTransformationPoints } from "./ImageTPS";
+import TPS from "../tps/TPS";
+import meanFace from "../../data/mean.json";
 
-class ImageTPS extends BaseTPS {
+class EmotionTPS extends BaseTPS {
     emotionModel: EmotionModel;
     emotionTransforms: Map<string, number[]>[];
     modelPoints: number[][];
@@ -246,4 +246,4 @@ class ImageTPS extends BaseTPS {
     }
 }
   
-export default ImageTPS;
+export default EmotionTPS;

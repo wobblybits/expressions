@@ -1,10 +1,10 @@
 import type { Component } from 'solid-js';
-import ExpressionModel from '../lib/ExpressionModel';
+import ExpressionModel from '../lib/threejs/ExpressionModel';
 import EmotionModel, { NoEmotion } from '../lib/EmotionModel';
 import { For, createSignal, createEffect, onMount } from 'solid-js';
-import Face from '../../../components/mesh/Face';
-import ClientOnly from '../../../lib/ClientOnly';
-import Scene from '../../../lib/Scene';
+import Face from '../components/threejs/Face';
+import ClientOnly from '../components/ui/ClientOnly';
+import Scene from '../lib/threejs/Scene';
 
 const CompositePage: Component = () => {
   const emotionModel = new EmotionModel();
@@ -87,23 +87,11 @@ const CompositePage: Component = () => {
   });
   
   return (
-    <div style={{
-      width: '90vw',
-      height: '95vh',
-      display: 'flex',
-      'align-items': 'center',
-      'justify-content': 'center',
-      'padding': '2em',
-      'box-sizing': 'border-box'
-    }}>
+    <div class='max-w-full p-4'>
+        <h1>Faces & Feelings ~ Emotional Arithmetic Tables</h1>
+    <div class='max-w-[90vw] max-h-[95vh] flex items-center justify-center p-4 box-border gap-4'>
       <ClientOnly fallback={<div id='loading'></div>}>
-        <div style={{
-          'max-width': '100%',
-          'max-height': '100%',
-          'aspect-ratio': '1 / 1',
-          'object-fit': 'contain',
-          'margin-top': '2em'
-        }}>
+        <div class='max-w-full max-h-[90vh] aspect-square object-contain'>
           <div id='composite-grid' style={{
             display: 'grid',
             'grid-template-columns': 'auto repeat(8, 1fr)',
@@ -169,6 +157,13 @@ const CompositePage: Component = () => {
           </div>
         </div>
       </ClientOnly>
+      <div id='controls-wrapper'>
+        <h1>Composite</h1>
+      </div>
+      </div>
+      <div class='explainer'>
+        <h2>Secondary Emotions</h2>
+      </div>
     </div>
   );
 };

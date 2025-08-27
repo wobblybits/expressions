@@ -1,15 +1,15 @@
 import type { Component } from 'solid-js';
-import ExpressionModel from '../lib/ExpressionModel';
+import ExpressionModel from '../lib/threejs/ExpressionModel';
 import EmotionModel from '../lib/EmotionModel';
-import Controls from '../../../components/ui/Controls';
-import ClientOnly from '~/lib/ClientOnly';
+import Controls from '../components/ui/Controls';
+import ClientOnly from '~/components/ui/ClientOnly';
 
 const SynthPage: Component = () => {
   const emotionModel = new EmotionModel();
   const expressionModel = new ExpressionModel(emotionModel);
   return (
     <div class='max-h-[80vh] p-4'>
-        <h1>Synthesizing Facial Expressions</h1>
+        <h1>Faces & Feelings ~ Expression Synthesizer</h1>
     <div class="flex flex-col items-center justify-center h-full gap-4">
       
       <div class="flex flex-row items-center justify-center h-full gap-4">

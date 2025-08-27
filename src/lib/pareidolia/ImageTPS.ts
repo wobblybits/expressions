@@ -1,5 +1,5 @@
-import TPS from './TPS';
-import { silhouette } from "../data/features.json";
+import TPS from '../tps/TPS';
+import { silhouette } from "../../data/features.json";
 import GPU from './GPU';
 import { getBBox, calculateConvexHull, isPointInConvexHull, type BBox } from './utils';
 
@@ -56,6 +56,7 @@ export abstract class BaseTPS {
     // Let subclasses set up their specific TPS configurations
     this.setupTPS();
 
+    console.log("baseTPS", this.baseTPS);
     // Create the base transformation and silhouette
     this.imageSilhouette = [];
     for (let i = 0; i < this.silhouetteHull.length; i++) {

@@ -1,5 +1,5 @@
 import type { Component } from 'solid-js';
-import ExpressionModel from '../lib/ExpressionModel';
+import ExpressionModel from '../lib/threejs/ExpressionModel';
 import EmotionModel from '../lib/EmotionModel';
 import Game from '../../../components/mesh/Game';
 

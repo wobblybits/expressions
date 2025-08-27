@@ -1,11 +1,11 @@
 import type { Component } from 'solid-js';
 import * as THREE from 'three';
-import ExpressionModel from '../../features/emotions/lib/ExpressionModel';
-import { NoEmotion, type EmotionLevels } from '../../features/emotions/lib/EmotionModel';
-import Scene from '../../lib/Scene';
+import ExpressionModel from '../../lib/threejs/ExpressionModel';
+import { NoEmotion, type EmotionLevels } from '../../lib/EmotionModel';
+import Scene from '../../lib/threejs/Scene';
 import { createEffect, createSignal } from 'solid-js';
-import EmotionModel from '../../features/emotions/lib/EmotionModel';
-import ClientOnly from '../../lib/ClientOnly';
+import EmotionModel from '../../lib/EmotionModel';
+import ClientOnly from '../ui/ClientOnly';
 
 const Face: Component<{ id: string, width: number, height: number, expressionModel?: ExpressionModel, emotionLevels?: EmotionLevels | number[] | (() => EmotionLevels), rotation?: number[], scene?: Scene }> = (props) => {
     const scene = props.scene || new Scene(props.width, props.height);

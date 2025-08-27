@@ -1,8 +1,7 @@
 import { Component, lazy } from 'solid-js';
-import ClientOnly from '../lib/ClientOnly';
+import ClientOnly from '../components/ui/ClientOnly';
 import PageLayout from '../components/ui/PageLayout';
-
-const PareidoliaPage = lazy(() => import('../features/pareidolia/pages/PareidoliaPage'));
+import PareidoliaPage from '../pages/PareidoliaPage';
 
 const Pareidolia: Component = () => {
   return (

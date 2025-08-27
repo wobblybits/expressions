@@ -1,7 +1,7 @@
 import { Component, createSignal, JSX } from "solid-js";
-import ExpressionModel from "../../features/emotions/lib/ExpressionModel";
-import Face from "../mesh/Face";
-import EmotionModel, { NoEmotion, type EmotionLevels } from "../../features/emotions/lib/EmotionModel";
+import ExpressionModel from "../../lib/threejs/ExpressionModel";
+import Face from "../threejs/Face";
+import EmotionModel, { NoEmotion, type EmotionLevels } from "../../lib/EmotionModel";
 import { For } from "solid-js";
 
 
@@ -10,7 +10,7 @@ const Controls: Component<{title: string, emotionModel: EmotionModel, callback: 
     const [displayEmotionLevels, setDisplayEmotionLevels] = createSignal<EmotionLevels>(NoEmotion);
 
     return (
-        <div style={{display: "flex", "flex-direction": "column", "align-items": "center", "justify-content": "center", "width": "300px" }}>
+        <div id="controls-wrapper" style={{display: "flex", "flex-direction": "column", "align-items": "center", "justify-content": "center", "width": "300px" }}>
             <h1 class="pixelated-text">{props.title}</h1>
             <div id="controls" class="pixelated-border">
                 <h4>Expression</h4>

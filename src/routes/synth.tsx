@@ -1,6 +1,6 @@
 import { Component } from 'solid-js';
 import PageLayout from '../components/ui/PageLayout';
-import SynthPage from '../features/emotions/pages/SynthPage';
+import SynthPage from '../pages/SynthPage';
 
 const Synth: Component = () => {
   return (

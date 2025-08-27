@@ -1,5 +1,5 @@
-import { BaseTPS, type TPSTransformationPoints } from '../../../tps/ImageTPS';
-import TPS from '../../../tps/TPS';
+import { BaseTPS, type TPSTransformationPoints } from '../pareidolia/ImageTPS';
+import TPS from '../tps/TPS';
 
 class CameraTPS extends BaseTPS {
     cameraLandmarks: number[][];
@@ -12,6 +12,7 @@ class CameraTPS extends BaseTPS {
         // Create silhouette points first
         const silhouettePoints = cameraLandmarks.map(landmark => [landmark[0], landmark[1]]);
         
+        console.log(imageLandmarks, cameraLandmarks, imageData, processingScale, silhouettePoints);
         super(imageLandmarks, imageData, processingScale, silhouettePoints);
         
         // Store camera-specific data AFTER calling super
@@ -32,6 +33,7 @@ class CameraTPS extends BaseTPS {
         this.inverseMap = this.precomputeTransformationMap(this.baseTPS);
 
         // Call setupTPS AFTER all properties are assigned
+        console.log("calling setupTPS");
         this.setupTPS();
 
         // Initialize GPU asynchronously
@@ -43,11 +45,9 @@ class CameraTPS extends BaseTPS {
     }
 
     setupTPS(): void {
+        console.log("setupTPS called");
         this.baseTPS = new TPS(this.cameraPoints, this.imagePoints);
-        this.nilpotentTPS = new TPS(
-            this.cameraLandmarks.filter((_, i) => i % this.landmarkSkip === 0).map(d => d.slice(0,2)), 
-            this.cameraLandmarks.filter((_, i) => i % this.landmarkSkip === 0).map(d => d.slice(0,2))
-        );
+        this.nilpotentTPS = new TPS(this.cameraPoints, this.cameraPoints);
         this.activeTPS = this.nilpotentTPS;
     }
 

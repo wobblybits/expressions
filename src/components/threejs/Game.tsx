@@ -1,11 +1,11 @@
 import type { Component } from 'solid-js';
 import * as THREE from 'three';
-import ExpressionModel from '../../features/emotions/lib/ExpressionModel';
-import { NoEmotion, type EmotionLevels } from '../../features/emotions/lib/EmotionModel';
-import Scene from '../../lib/Scene';
+import ExpressionModel from '../../lib/threejs/ExpressionModel';
+import { NoEmotion, type EmotionLevels } from '../../lib/EmotionModel';
+import Scene from '../../lib/threejs/Scene';
 import Face from './Face';
 import { For, createSignal } from 'solid-js';
-import Agent from '../../features/emotions/lib/Agent';
+import Agent from '../../lib/game/Agent';
 
 let learningRate = 1;
 let updateInterval = 400;
@@ -103,7 +103,7 @@ const Game: Component<{ id: string, width: number, height: number, expressionMod
     let isInitialized = false;
 
     // Create web worker for agent initialization
-    const worker = new Worker(new URL('../../features/emotions/lib/AgentWorker.ts', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('../../lib/AgentWorker.ts', import.meta.url), { type: 'module' });
 
     // Handle worker messages
     worker.onmessage = (e) => {

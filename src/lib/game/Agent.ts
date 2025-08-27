@@ -1,5 +1,5 @@
-import EmotionModel, { NoEmotion } from './EmotionModel';
-import ExpressionModel from './ExpressionModel';
+import EmotionModel, { NoEmotion } from '../EmotionModel';
+import ExpressionModel from '../threejs/ExpressionModel';
 
 class ActivationFunctions {
     // 1. Tanh - Classic, symmetric, bounded

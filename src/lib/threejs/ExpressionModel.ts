@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { vertices, indices } from '../../../data/mediapipe478.json';
-import meanData from '../../../data/mean.json';
-import EmotionModel from './EmotionModel';
-import type { EmotionLevels } from './EmotionModel';
+import { vertices, indices } from '../../data/mediapipe478.json';
+import meanData from '../../data/mean.json';
+import EmotionModel from '../EmotionModel';
+import type { EmotionLevels } from '../EmotionModel';
 
 // instantiate a loader
 class ExpressionModel {
     canonicalFace: THREE.BufferGeometry | undefined;
-    faceMaterial: THREE.Material;
+    faceMaterial: THREE.MeshToonMaterial;
     sphere: THREE.Object3D | undefined;
     emotionModel: EmotionModel;
     faceMesh: THREE.Mesh;
@@ -37,7 +37,7 @@ class ExpressionModel {
             color: 0xaaddcc,
         } );
         this.faceMaterial.side = THREE.DoubleSide;
-        this.faceMaterial.flatShading = false;
+        // this.faceMaterial.flatShading = false;
         this.faceMaterial.wireframe = false;
         this.faceMesh = new THREE.Mesh(this.canonicalFace, this.faceMaterial);
 

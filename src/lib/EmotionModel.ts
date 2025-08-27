@@ -1,5 +1,5 @@
-import emotionsData from '../../../data/emotions_100.json';
-import pcaData from '../../../data/pca_100.json';
+import emotionsData from '../data/emotions_100.json';
+import pcaData from '../data/pca_100.json';
 
 export type Emotion = "angry" | "contempt" | "disgust" | "fear" | "happy" | "neutral" | "sad" | "surprise";
 export type EmotionLevels = { [key in Emotion]?: number };

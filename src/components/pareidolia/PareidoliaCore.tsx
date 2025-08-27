@@ -3,7 +3,7 @@ import features from "../../data/features.json";
 import layers from "../../data/layers.json";
 import mediapipe from "../../data/mediapipe478.json";
 import meanFace from "../../data/mean.json";
-import Face from "../mesh/Face";
+import Face from "../threejs/Face";
 
 const padding = 0;
 

@@ -1,7 +1,7 @@
 import type { Component } from 'solid-js';
-import EmotionModel from '../../emotions/lib/EmotionModel';
-import Pareidolia from '../../../components/pareidolia/PareidoliaEmotion';
-import ClientOnly from '../../../lib/ClientOnly';
+import EmotionModel from '../lib/EmotionModel';
+import Pareidolia from '../components/pareidolia/PareidoliaEmotion';
+import ClientOnly from '../components/ui/ClientOnly';
 
 const PareidoliaPage: Component = () => {
   const emotionModel = new EmotionModel();

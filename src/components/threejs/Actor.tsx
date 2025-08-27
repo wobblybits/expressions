@@ -1,8 +1,8 @@
 import type { Component } from 'solid-js';
 import * as THREE from 'three';
-import ExpressionModel from '../../features/emotions/lib/ExpressionModel';
-import EmotionModel, { NoEmotion, type EmotionLevels, randomExpression } from '../../features/emotions/lib/EmotionModel';
-import Scene from '../../lib/Scene';
+import ExpressionModel from '../../lib/threejs/ExpressionModel';
+import EmotionModel, { NoEmotion, type EmotionLevels, randomExpression } from '../../lib/EmotionModel';
+import Scene from '../../lib/threejs/Scene';
 
 const Actor: Component<{ id: string, width: number, height: number, expressionModel?: ExpressionModel, emotionLevels?: EmotionLevels, rotation?: number[] }> = (props) => {
     const scene = new Scene(props.width, props.height);
