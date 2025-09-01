@@ -447,7 +447,11 @@ h1 {
 #composite-grid .face {
   width: auto !important;
   height: auto !important;
-  margin-top: 2px !important;
+  margin-top: -3px !important;
+}
+
+#composite-grid .grid-face-wrapper:hover {
+  filter: contrast(.8) sepia(.2) saturate(.7) contrast(2);
 }
 
 main p {

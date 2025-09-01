@@ -1,25 +1,36 @@
 import type { Component } from 'solid-js';
 import ExpressionModel from '../lib/threejs/ExpressionModel';
-import EmotionModel, { NoEmotion } from '../lib/EmotionModel';
+import EmotionModel, { EmotionLevels, NoEmotion } from '../lib/EmotionModel';
 import { For, createSignal, createEffect, onMount } from 'solid-js';
 import Face from '../components/threejs/Face';
 import ClientOnly from '../components/ui/ClientOnly';
 import Scene from '../lib/threejs/Scene';
 import { Embedding } from '../lib/Embedding';
+import Controls from '../components/ui/Controls';
 
 const CompositePage: Component = () => {
   const emotionModel = new EmotionModel();
   const expressionModel = new ExpressionModel(emotionModel);
+  const [emotionLevels, setEmotionLevels] = createSignal<EmotionLevels>(NoEmotion);
   const embedding = new Embedding();
+  let labelRef : HTMLSpanElement | undefined;
   const emotions = {
-    angry: 80,
-    contempt: 120,
-    disgust: 80,
-    fear: 150,
-    happy: 80,
-    neutral: 80,
-    sad: 50,
-    surprise: 80,
+    // angry: 80,
+    // contempt: 120,
+    // disgust: 80,
+    // fear: 150,
+    // happy: 80,
+    // neutral: 80,
+    // sad: 50,
+    // surprise: 80,
+    angry: 100,
+    contempt: 100,
+    disgust: 100,
+    fear: 100,
+    happy: 100,
+    neutral: 100,
+    sad: 100,
+    surprise: 100,
   }
   const scene = new Scene(140, 140); // Keep at 140x140
   
@@ -64,6 +75,8 @@ const CompositePage: Component = () => {
   
   // Set up mutation observer to detect when faces finish rendering
   onMount(() => {
+    labelRef = document.querySelector("#expression-label");
+    labelRef.innerHTML = embedding.getClosestWord(NoEmotion) || "(no expression)";
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
@@ -91,9 +104,11 @@ const CompositePage: Component = () => {
   return (
     <div class='max-w-full p-4'>
         {/* <h1>Faces & Feelings ~ Emotional Arithmetic Tables</h1> */}
-    <div class='max-w-[90vw] max-h-[90vh] flex items-center justify-center p-4 box-border gap-4'>
-      <ClientOnly fallback={<div id='loading'></div>}>
-        <div class='max-w-full max-h-[80vh] aspect-square object-contain'>
+
+      <div class="flex flex-row items-center justify-center h-full gap-4">
+        <div class='max-h-[95vh] overflow-y-auto'>
+      <div class='max-w-[80vh] max-h-[100vh] aspect-square object-contain'>
+        <ClientOnly>
           <div id='composite-grid' style={{
             display: 'grid',
             'grid-template-columns': 'auto repeat(8, 1fr)',
@@ -101,7 +116,9 @@ const CompositePage: Component = () => {
             gap: '2px',
             'align-items': 'center',
             'justify-items': 'center',
-            'object-fit': 'contain'
+            'object-fit': 'contain',
+            margin: 'auto',
+
           }}>
             {/* Header row */}
             <div class='grid-label'></div>
@@ -121,11 +138,11 @@ const CompositePage: Component = () => {
                   </div>
                   <For each={Object.keys(NoEmotion)}>
                     { (column, columnIndex) => 
-                      <div style={{
+                      <div class='grid-face-wrapper'style={{
                         'background': 'white', 
                         'border': '1px solid black',
-                        'min-width': '4em',
-                        'min-height': '6em',
+                        'min-width': '6.2em',
+                        'min-height': '6.3em',
                         width: 'auto',
                         height: 'auto',
                         display: 'flex',
@@ -135,6 +152,10 @@ const CompositePage: Component = () => {
                         overflow: 'hidden',
                         // 'aspect-ratio': '1 / 1',
                         'position': 'relative'
+                      }}
+                      onMouseEnter={() => {
+                        labelRef.innerHTML = embedding.getClosestWord({[row]: emotions[row], [column]: emotions[column]});
+                        setEmotionLevels({[row]: emotions[row], [column]: emotions[column]});
                       }}>
                         {renderingFaces().has(`face${rowIndex()}-${columnIndex()}`) ? (
                           <Face 
@@ -163,14 +184,33 @@ const CompositePage: Component = () => {
               ) }
             </For>
           </div>
-        </div>
       </ClientOnly>
-      <div id='controls-wrapper'>
-        <h1>Composite</h1>
+      </div>
+      <br></br>
+        <div class='explainer' style={{ height: 'auto', 'max-height': 'none', 'overflow-y': 'auto' }}>
+          <p>
+            So the base model for <a href="./synth">synthesizing facial expressions</a> uses the eight "primary emotions" that were tagged in the original image datasets. For each of these emotions, the model provides a vector of three-dimensional landmark displacements. Any weighted combination of these eight vectors gives us a new vector that can also be visually rendered as a face. There is not a objective way to verify that the result is "correct". In the vocabulary of statistics, we have "reliable" results but we can't say much about their conceptual "validity". At the same time, as humans we might feel that there is a lot of intuitive machinery that gets activated to reason about what a combination of basic emotions "should" look like. How can we try to capture that intuition to better understand the validity of the compositional results of this model?
+          </p>
+          <p>
+            Facial expressions are only one way to approach the modeling of emotions. Language is another. When we try to use human intuition to understand how complex emotions might arise from the combination of primary emotions, we might already be trying to reason about them linguistically. What would it mean for someone to feel happy and surprised at the same time? It is unlikely that we directly calculate how each of these emotions is enacted by the musculature of the face. Instead we might try to leverage our linguistic faculties and first try to guess what that combination would be called. If we can arrive at a guess, let's say "delight", we might then be able to reason about what a delighted face should look like. So how can we bring this alternative knowledge to bear on our displacement vectors? Word vectors!
+          </p>
+          <p> 
+            The desire to be able to "do math" on natural language is not new. It immediately arises once text data is stored on computers, even if it's not clear what it would mean to "do math" on natural language. You probably need to test if two pieces of text are equivalent, sure. You probably also want to be able to tell if one piece of text contains another. Then you might want to know how similar two pieces of text are to each other. And then can you use that sense of similarity to search a set of documents for terms or phrases and return the "best" results? It is no surprise that search became one of the most important and competitive areas of the early internet era. At it's core, it is a way to give numerical answers to textual input where the numbers capture something "meaningful". And it is no surprise that a new way of "doing math" on natural language (LLMs) has now threatened the primacy of search. It is also now surprise that the real advancement of LLMs came by completing the other side of circuit -- turning numbers back into language in a way that captures something meaningful. Anyways, one of the fundamental concepts that has developed along the way is the notion of "semantic embedding," where words are represented as high-dimensional vectors.
+          </p>
+          <p>
+            In the same way that we turned facial expressions into vectors added them together and then turned them back into facial expressions, words can be turned into vectors added together and then turned back into words. So one possible answer to the question of whether or not there is alignment between visual reasoning and linguistic reasoning about emotions immediately presents itself. Since our facial expressions are just composites of eight primary emotions, what happens if we just do the same thing with the word vectors for those very same primary emotions? 
+          </p>
       </div>
       </div>
-      <div class='explainer'>
-        <h2>Secondary Emotions</h2>
+      
+
+      <ClientOnly>
+        <Controls title="Demo" emotionModel={emotionModel} emotionLevelsSignal={[emotionLevels, setEmotionLevels]} callback={(emotionLevels: EmotionLevels) => {
+          labelRef.innerHTML = embedding.getClosestWord(emotionLevels) || "(no expression)";
+        }}>
+        </Controls>
+      </ClientOnly>
+
       </div>
     </div>
   );

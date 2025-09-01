@@ -5,9 +5,10 @@ import EmotionModel, { NoEmotion, type EmotionLevels } from "../../lib/EmotionMo
 import { For } from "solid-js";
 
 
-const Controls: Component<{title: string, emotionModel: EmotionModel, callback: (emotionLevels: EmotionLevels) => void, children?: JSX.Element}> = (props) => {
+const Controls: Component<{title: string, emotionModel: EmotionModel, callback: (emotionLevels: EmotionLevels) => void, emotionLevelsSignal?: [() => EmotionLevels, (emotionLevels: EmotionLevels) => void], children?: JSX.Element}> = (props) => {
 
-    const [displayEmotionLevels, setDisplayEmotionLevels] = createSignal<EmotionLevels>(NoEmotion);
+
+    const [displayEmotionLevels, setDisplayEmotionLevels] = props.emotionLevelsSignal || createSignal<EmotionLevels>(NoEmotion);
 
     return (
         <div id="controls-wrapper" style={{display: "flex", "flex-direction": "column", "align-items": "center", "justify-content": "center", "width": "300px" }}>
@@ -15,6 +16,7 @@ const Controls: Component<{title: string, emotionModel: EmotionModel, callback: 
             <div id="controls" class="pixelated-border">
                 <h4>Expression</h4>
                 <Face id="face" width={140} height={140} expressionModel={new ExpressionModel(props.emotionModel)} emotionLevels={displayEmotionLevels}/>
+                <span id="expression-label"></span>
                 <For each={Object.keys(NoEmotion)}>
                     {(key) => 
                         <div id="emotion-sliders" style={{display: "flex", "align-items": "center", gap: "10px"}}>
