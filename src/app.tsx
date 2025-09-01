@@ -7,6 +7,7 @@ import ArithmeticRoute from "./routes/arithmetic";
 import SynthRoute from "./routes/synth"
 import PareidoliaRoute from "./routes/pareidolia";
 import TransferenceRoute from "./routes/transference";
+import MovieRoute from "./routes/movie";
 
 const App: Component = () => {
   // Use DEPLOYMENT_TARGET instead of NODE_ENV
@@ -14,7 +15,7 @@ const App: Component = () => {
   const base = target === "production" 
     ? "/expressions/" 
     : target === "local" 
-    ? "/ellipses/.output/public/"
+    ? "/expressions/.output/public/"
     : ""; // development
 
   if (target !== "production") {
@@ -30,6 +31,7 @@ const App: Component = () => {
       <Route path="/pareidolia" component={PareidoliaRoute} />
       <Route path="/transference" component={TransferenceRoute} />
       <Route path="/synth" component={SynthRoute} />
+      <Route path="/movie" component={MovieRoute} />
     </Router>
   );
 };

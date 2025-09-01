@@ -120,20 +120,40 @@ export default class TPS extends Transformation {
    * Set forward transformation parameters
    * @param targetPoints - array of points - [Northing, Easting]
    */
-  updateParameters(targetPoints: number[][]): { Xc: Float64Array; Yc: Float64Array } {    
-    this._targetPoints = targetPoints;
-    const m = this.targetPoints.length;
+  updateParameters(sourcePoints: number[][]): TPSParameters {    
+    this._sourcePoints = [...sourcePoints];
+    const m = this._targetPoints.length;
     let Xc = new Float64Array(m + 3),
     Yc = new Float64Array(m + 3);
     for (let r = 0; r < m + 3; r++) {
       for (let c = 0; c < m; c++) {
-        Xc[r] += this.invA![r][c + 3] * targetPoints[c][0];
-        Yc[r] += this.invA![r][c + 3] * targetPoints[c][1];
+        Xc[r] += this.invA![r][c + 3] * sourcePoints[c][0];
+        Yc[r] += this.invA![r][c + 3] * sourcePoints[c][1];
       }
     }
-    this._forwardParameters.Xc = [...Xc];
-    this._forwardParameters.Yc = [...Yc];
-    return { Xc, Yc };
+    this._inverseParameters.Xc = [...Xc];
+    this._inverseParameters.Yc = [...Yc];
+    return { m, Xc, Yc, sourcePoints: sourcePoints };
+  }
+
+   /**
+   * Set inverse transformation parameters
+   * @param targetPoints - array of points - [Northing, Easting]
+   */
+   updateForwardParameters(targetPoints: number[][]): TPSParameters {
+    this._targetPoints = [...targetPoints];
+    const newParams = this.__calculateParameters(this._sourcePoints, this._targetPoints);
+    if (newParams && !this.__isEmpty(newParams)) {
+      this._forwardParameters = newParams;
+      // // this._inverseParameters.Yc[0] = 0;
+      // this._inverseParameters.Yc[1] = 0;
+      // this._inverseParameters.Yc[2] = 1;
+      // // this._inverseParameters.Xc[0] = 0;
+      // this._inverseParameters.Xc[1] = 1;
+      // this._inverseParameters.Xc[2] = 0;
+    }
+    console.log("forwardParameters", this._forwardParameters);
+    return this._forwardParameters as TPSParameters;
   }
 
   /**
@@ -146,12 +166,13 @@ export default class TPS extends Transformation {
     if (newParams && !this.__isEmpty(newParams)) {
       this._inverseParameters = newParams;
       // this._inverseParameters.Yc[0] = 0;
-      this._inverseParameters.Yc[1] = 0;
-      this._inverseParameters.Yc[2] = 1;
+      // this._inverseParameters.Yc[1] = 0;
+      // this._inverseParameters.Yc[2] = 1;
       // this._inverseParameters.Xc[0] = 0;
-      this._inverseParameters.Xc[1] = 1;
-      this._inverseParameters.Xc[2] = 0;
+      // this._inverseParameters.Xc[1] = 1;
+      // this._inverseParameters.Xc[2] = 0;
     }
+    // console.log("inverseParameters", this._inverseParameters);
     return this._inverseParameters as TPSParameters;
   }
 

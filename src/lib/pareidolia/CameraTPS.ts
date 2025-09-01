@@ -1,5 +1,6 @@
 import { BaseTPS, type TPSTransformationPoints } from '../pareidolia/ImageTPS';
 import TPS from '../tps/TPS';
+import { getBBox } from './utils';
 
 class CameraTPS extends BaseTPS {
     cameraLandmarks: number[][];
@@ -7,13 +8,11 @@ class CameraTPS extends BaseTPS {
     cameraBBox: any;
     landmarkSkip: number;
     inverseMap: number[][];
+    allPoints: number[][];
 
     constructor(imageLandmarks: Map<number, number[]>, cameraLandmarks: number[][], imageData: ImageData, processingScale: number = 2) {
-        // Create silhouette points first
-        const silhouettePoints = cameraLandmarks.map(landmark => [landmark[0], landmark[1]]);
-        
-        console.log(imageLandmarks, cameraLandmarks, imageData, processingScale, silhouettePoints);
-        super(imageLandmarks, imageData, processingScale, silhouettePoints);
+        console.log("imageData", imageData);
+        super(imageLandmarks, cameraLandmarks, imageData, processingScale);
         
         // Store camera-specific data AFTER calling super
         this.cameraLandmarks = cameraLandmarks;
@@ -29,51 +28,45 @@ class CameraTPS extends BaseTPS {
             }
         }
 
-        this.cameraBBox = this.getBBox(this.silhouetteHull);
+        this.allPoints = [];
+        for (let i = 0; i < cameraLandmarks.length; i+=this.landmarkSkip) {
+            this.allPoints.push([cameraLandmarks[i][0], cameraLandmarks[i][1], cameraLandmarks[i][2]]);
+        }
+
+        this.initialize();
+
+        this.cameraBBox = getBBox(this.silhouetteHull);
         this.inverseMap = this.precomputeTransformationMap(this.baseTPS);
-
-        // Call setupTPS AFTER all properties are assigned
-        console.log("calling setupTPS");
-        this.setupTPS();
-
-        // Initialize GPU asynchronously
-        this.initializeGPU().then(() => {
-            console.log('CameraTPS GPU initialized successfully');
-        }).catch((error) => {
-            console.error('Failed to initialize CameraTPS GPU:', error);
-        });
     }
 
     setupTPS(): void {
-        console.log("setupTPS called");
         this.baseTPS = new TPS(this.cameraPoints, this.imagePoints);
-        this.nilpotentTPS = new TPS(this.cameraPoints, this.cameraPoints);
+        this.nilpotentTPS = new TPS(this.allPoints, this.allPoints);
         this.activeTPS = this.nilpotentTPS;
-    }
-
-    getSilhouettePoints(): number[][] {
-        // Use the constructor parameter directly since this.cameraLandmarks isn't set yet
-        // We'll need to store this temporarily or pass it differently
-        const points: number[][] = [];
-        // For now, return empty array - the base class will handle this
-        // We'll set up the real silhouette points after construction
-        return points;
     }
 
     getTransformationPoints(): TPSTransformationPoints {
         return {
             base: this.cameraPoints,
-            distort: this.cameraLandmarks.filter((_, i) => i % this.landmarkSkip === 0).map(d => d.slice(0,2))
+            distort: this.allPoints
         };
     }
 
     updateActiveTargets(newLandmarks: number[][]): boolean {
-        const params = this.activeTPS.updateInverseParameters(newLandmarks.filter((_, i) => i % this.landmarkSkip === 0).map(d => d.slice(0,2)));
-        if (params && this.gpu.initialized) {
-            this.gpu.updateBuffer(this.gpu.distortPointsBuffer, new Float32Array(newLandmarks.filter((_, i) => i % this.landmarkSkip === 0).map((d) => d.slice(0,2)).flat()));
-            this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, new Float32Array(params.Xc), new Float32Array(params.Yc));
+        try {
+            const landmarks = newLandmarks.filter((_, i) => i % this.landmarkSkip === 0).map(d => d.slice(0,2));
+            const params = this.activeTPS.updateInverseParameters(landmarks);
+            // this.activeTPS = new TPS(this.allPoints, landmarks);
+            // const params = this.activeTPS.inverseParameters;
+            if (this.gpu.initialized) {
+                this.gpu.updateBuffer(this.gpu.distortPointsBuffer, new Float32Array(params.sourcePoints.flat()));
+                this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, new Float32Array(params.Xc), new Float32Array(params.Yc));
+            }
+            return true;
+        } catch (e) {
+            // console.log("error", e);
+            return false;
         }
-        return true;
     }
 
     transformXY(x: number, y: number): number[] {      
@@ -90,17 +83,6 @@ class CameraTPS extends BaseTPS {
           }
         }
         return inverseMap;
-    }
-
-    private getBBox(points: number[][]) {
-        return {
-            minX: Math.floor(Math.min(...points.map(p => p[0]))),
-            maxX: Math.ceil(Math.max(...points.map(p => p[0]))),
-            minY: Math.floor(Math.min(...points.map(p => p[1]))),
-            maxY: Math.ceil(Math.max(...points.map(p => p[1]))),
-            minZ: Math.floor(Math.min(...points.map(p => p[2]))),
-            maxZ: Math.ceil(Math.max(...points.map(p => p[2]))),
-        };
     }
 }
   

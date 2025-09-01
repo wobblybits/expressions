@@ -1,57 +1,58 @@
 import { Component, createSignal } from "solid-js";
 import PareidoliaCore from "./PareidoliaCore";
 import CameraTPS from "../../lib/pareidolia/CameraTPS";
-import FaceMeshCamera from "../../lib/pareidolia/Camera";
 import Face from "../threejs/Face";
+import FaceMeshMovie from "../../lib/pareidolia/Movie";
+import { onMount } from "solid-js";
 
-const PareidoliaCam: Component<{}> = (props) => {
+const PareidoliaMovie: Component<{}> = (props) => {
   let cameraLandmarks: number[][] | undefined;
   let faceRef: typeof Face | undefined;
   let faceSvgRef: SVGSVGElement | undefined;
-
-  const [cameraTPS, setCameraTPS] = createSignal<CameraTPS | null>(null);
+  let movieRef: HTMLVideoElement | undefined;
+  const [currentTPS, setCurrentTPS] = createSignal<any>(null);
   const [originalImageData, setOriginalImageData] =
     createSignal<ImageData | null>(null);
-  const [isThinking, setIsThinking] = createSignal<boolean>(false);
+  const [isThinking, setIsThinking] = createSignal(false);
   const [displayPoints, setDisplayPoints] = createSignal<number[][]>([]);
   const [currentLayer, setCurrentLayer] = createSignal("basics");
 
   // Performance optimization constants
   const PROCESSING_SCALE = 1;
 
-  const faceMeshCamera = new FaceMeshCamera(async (landmarks) => {
+  onMount(() => {
+    movieRef.onloadeddata = (evt) => {
+      let video = evt.target as HTMLVideoElement;
     
-    // capture first frame and save as reference, don't draw
-    if (landmarks.length > 0 && !cameraLandmarks) {
-      console.log("first framecameraLandmarks", landmarks);
-      cameraLandmarks = landmarks;
-      return;
+      movieRef.width = video.videoWidth;
+      movieRef.height = video.videoHeight;
+    
+      movieRef.loop = true;
     }
-
-    // only process one frame at a time, let frames drop
-    if (isThinking() || !cameraTPS() || !landmarks) return;
-
-    setIsThinking(true);
-
-    if (!cameraTPS().updateActiveTargets(landmarks)) {
-      console.log("TPS Error");
-      //don't continue if there was a calculation problem
-      setIsThinking(false);
-      return;
-    }
-
-    requestAnimationFrame(async () => {
-      try {
-        // throw new Error("test");
-        await cameraTPS().drawGPU();
-        // console.log("GPU");
-      } catch (e) {
-        // cameraTPS().draw(); // Fallback to CPU only if GPU fails
-        // console.log("CPU fallback");
-      } finally {
-        // console.log("finally", isWorking, isThinking());
-        setIsThinking(false);
+    const faceMeshMovie = new FaceMeshMovie(movieRef, async (landmarks) => {
+      if (landmarks.length > 0 && !cameraLandmarks) {
+        cameraLandmarks = landmarks;
+        return;
       }
+      
+      if (isThinking() || !currentTPS() || !landmarks) return;
+
+      setIsThinking(true);
+      if (!currentTPS().updateActiveTargets(landmarks)) {
+        setIsThinking(false);
+        return;
+      }
+      requestAnimationFrame(async () => {
+        // await faceMeshMovie.faceMesh.send({ image: movieRef });
+        try {
+          await currentTPS().drawGPU();
+        } catch (e) {
+          currentTPS().draw(); // Fallback to CPU only if GPU fails
+          // console.log("CPU fallback");
+        } finally {
+          setIsThinking(false);
+        }
+      });
     });
   });
 
@@ -61,15 +62,17 @@ const PareidoliaCam: Component<{}> = (props) => {
   };
 
   const handleImageProcessed = (imageData: ImageData) => {
-    console.log("imageProcessed", imageData, cameraLandmarks);
+    console.log("imageProcessed", imageData);
     setOriginalImageData(imageData);
   };
 
   const handleViewPoints = () => {
+    // Toggle point visibility
     console.log("viewPoints");
   };
 
   return (
+    <>
     <PareidoliaCore
       controls={{
         render: (props) => (
@@ -121,26 +124,12 @@ const PareidoliaCam: Component<{}> = (props) => {
               <input
                 type="button"
                 value="Do it!"
-                onClick={props.onProcess}
-              />
-              <h4>Camera</h4>
-              <input
-                type="button"
-                value="Start"
-                onClick={() => {
-                  faceMeshCamera.start().catch((error) => {
-                    console.error("Failed to start camera:", error);
-                  });
+                onClick={function() {
+                  movieRef.play();
+                  // handleProcessImage();
+                  props.onProcess();
                 }}
               />
-              <input
-                type="button"
-                value="Stop"
-                onClick={() => {
-                  faceMeshCamera.stop();
-                }}
-              />
-              <br />
               <input
                 type="button"
                 value="View Points"
@@ -158,7 +147,8 @@ const PareidoliaCam: Component<{}> = (props) => {
             imageData,
             PROCESSING_SCALE
           );
-          setCameraTPS(tps);
+          setCurrentTPS(tps);
+          console.log("created tps", tps);
           return tps;
         },
         update: (tps, landmarks) => {
@@ -166,13 +156,15 @@ const PareidoliaCam: Component<{}> = (props) => {
         },
         destroy: (tps) => {
           tps.destroy();
-          setCameraTPS(null);
+          setCurrentTPS(null);
         },
       }}
       onFeatureComplete={handleFeatureComplete}
       onImageProcessed={handleImageProcessed}
     />
+    <video id="movie" ref={movieRef} src="/demo/giulietta.mp4" width={140} height={140} />
+    </>
   );
 };
 
-export default PareidoliaCam;
+export default PareidoliaMovie;

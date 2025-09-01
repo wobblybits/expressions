@@ -5,10 +5,12 @@ import { For, createSignal, createEffect, onMount } from 'solid-js';
 import Face from '../components/threejs/Face';
 import ClientOnly from '../components/ui/ClientOnly';
 import Scene from '../lib/threejs/Scene';
+import { Embedding } from '../lib/Embedding';
 
 const CompositePage: Component = () => {
   const emotionModel = new EmotionModel();
   const expressionModel = new ExpressionModel(emotionModel);
+  const embedding = new Embedding();
   const emotions = {
     angry: 80,
     contempt: 120,
@@ -88,10 +90,10 @@ const CompositePage: Component = () => {
   
   return (
     <div class='max-w-full p-4'>
-        <h1>Faces & Feelings ~ Emotional Arithmetic Tables</h1>
-    <div class='max-w-[90vw] max-h-[95vh] flex items-center justify-center p-4 box-border gap-4'>
+        {/* <h1>Faces & Feelings ~ Emotional Arithmetic Tables</h1> */}
+    <div class='max-w-[90vw] max-h-[90vh] flex items-center justify-center p-4 box-border gap-4'>
       <ClientOnly fallback={<div id='loading'></div>}>
-        <div class='max-w-full max-h-[90vh] aspect-square object-contain'>
+        <div class='max-w-full max-h-[80vh] aspect-square object-contain'>
           <div id='composite-grid' style={{
             display: 'grid',
             'grid-template-columns': 'auto repeat(8, 1fr)',
@@ -123,7 +125,7 @@ const CompositePage: Component = () => {
                         'background': 'white', 
                         'border': '1px solid black',
                         'min-width': '4em',
-                        'min-height': '4em',
+                        'min-height': '6em',
                         width: 'auto',
                         height: 'auto',
                         display: 'flex',
@@ -131,7 +133,8 @@ const CompositePage: Component = () => {
                         'justify-content': 'center',
                         'object-fit': 'contain',
                         overflow: 'hidden',
-                        'aspect-ratio': '1 / 1'
+                        // 'aspect-ratio': '1 / 1',
+                        'position': 'relative'
                       }}>
                         {renderingFaces().has(`face${rowIndex()}-${columnIndex()}`) ? (
                           <Face 
@@ -146,9 +149,14 @@ const CompositePage: Component = () => {
                           <div style={{ 
                             width: '100%', 
                             height: '100%', 
-                            background: '#333' 
+                            background: '#333',
                           }}></div>
                         )}
+                        <span style={{
+                          position: 'absolute', 
+                          bottom: 0,
+                          'font-size': '10px'
+                        }}>{embedding.getClosestWord({[row]: emotions[row], [column]: emotions[column]})}</span>
                       </div> }
                   </For>
                 </>

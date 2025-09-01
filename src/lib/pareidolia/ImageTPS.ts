@@ -1,5 +1,6 @@
 import TPS from '../tps/TPS';
 import { silhouette } from "../../data/features.json";
+import meanFace from "../../data/mean.json";
 import GPU from './GPU';
 import { getBBox, calculateConvexHull, isPointInConvexHull, type BBox } from './utils';
 
@@ -27,12 +28,13 @@ export abstract class BaseTPS {
   protected imageData: ImageData;
   protected blurMask: Uint8Array;
   protected gpu: GPU;
+  protected displayScale: number;
 
   constructor(
     imageLandmarks: Map<number, number[]>, 
+    referenceLandmarks: number[][],
     imageData: ImageData, 
     processingScale: number = 1,
-    customSilhouettePoints?: number[][]  // Add this parameter
   ) {
     this.imageLandmarks = imageLandmarks;
     this.imageData = imageData;
@@ -43,16 +45,15 @@ export abstract class BaseTPS {
     for (const [key, value] of imageLandmarks) {
       this.imagePoints.push([...value]);
     }
-
-    // Use custom silhouette points if provided, otherwise call getSilhouettePoints()
-    const silhouettePoints = customSilhouettePoints || this.getSilhouettePoints();
-    
-    // Setup silhouette hull (shared across implementations)
+    // Setup silhouette hull
     this.silhouetteHull = [];
     for (let i = 0; i < silhouette.path.length; i++) {
-      this.silhouetteHull.push(silhouettePoints[silhouette.path[i]]);
+      const index = silhouette.path[i]
+      this.silhouetteHull.push([referenceLandmarks[index][0], referenceLandmarks[index][1]]);
     }
+  }
 
+  public initialize(): void {
     // Let subclasses set up their specific TPS configurations
     this.setupTPS();
 
@@ -62,29 +63,40 @@ export abstract class BaseTPS {
     for (let i = 0; i < this.silhouetteHull.length; i++) {
       this.imageSilhouette.push(this.baseTPS.forward(this.silhouetteHull[i]));
     }
+
+    console.log("imageSilhouette", this.imageSilhouette);
     
     this.imageBBox = getBBox(this.imageSilhouette);
+    console.log("imageBBox", this.imageBBox);
 
     // Setup canvas and rendering
-    this.setupCanvas();
+    this.setupCanvas({
+      // top: `calc(50% + ${-this.imageData.height/2 + this.imageBBox.minY}px)`,
+      // left: `calc(50% +  ${-this.imageData.width/2 + this.imageBBox.minX}px)`,
+      transform: "none",//"translate(-50%, -50%)"
+    });
     this.createMasks();
     this.setupGPU();
+    this.initializeGPU().then(() => {
+      console.log('ImageTPS GPU initialized successfully');
+  }).catch((error) => {
+      console.error('Failed to initialize ImageTPS GPU:', error);
+  });
   }
 
   // Abstract methods for subclasses to implement
   abstract setupTPS(): void;
-  abstract getSilhouettePoints(): number[][];
   abstract updateActiveTargets(newData: any): boolean;
   abstract getTransformationPoints(): TPSTransformationPoints;
   abstract transformXY(x: number, y: number): number[];
 
-  private setupCanvas(customPosition?: { top?: string, left?: string, transform?: string }): void {
+  private setupCanvas(customPosition?: { top?: number, left?: number, transform?: string }): void {
     this.canvas = document.createElement('canvas');
     this.canvas.width = this.imageBBox.maxX - this.imageBBox.minX;
     this.canvas.height = this.imageBBox.maxY - this.imageBBox.minY;
     this.canvas.style.position = 'absolute';
-    this.canvas.style.top = customPosition?.top || this.imageBBox.minY + 'px';
-    this.canvas.style.left = customPosition?.left || this.imageBBox.minX + 'px';
+    this.canvas.style.top = (customPosition?.top || this.imageBBox.minY) + 'px';
+    this.canvas.style.left = (customPosition?.left || this.imageBBox.minX) + 'px';
     this.canvas.style.transform = customPosition?.transform || '';
     this.canvas.style.pointerEvents = 'none';
     this.canvas.style.background = 'transparent';
@@ -99,6 +111,7 @@ export abstract class BaseTPS {
 
     this.ctx.fillStyle = 'transparent';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    console.log(this.canvas);
   }
 
   private createMasks(): void {
@@ -134,6 +147,7 @@ export abstract class BaseTPS {
       }
       tmp = new Uint8ClampedArray([...this.blurMask]);
     }
+    console.log("blurMask", this.blurMask, this.mask, this.hull);
   }
 
   private setupGPU(): void {
@@ -169,6 +183,9 @@ export abstract class BaseTPS {
                          (this.imageData.data[i + 1] << 8) | 
                          this.imageData.data[i];
       }
+
+      console.log("imageDataUint32", imageDataUint32);
+
       this.gpu.updateUintBuffer(this.gpu.imageDataBuffer, imageDataUint32);
       
       // Update face data with blur mask
@@ -224,6 +241,8 @@ export abstract class BaseTPS {
     const faceWidth = this.imageBBox.maxX - this.imageBBox.minX;
     const faceHeight = this.imageBBox.maxY - this.imageBBox.minY;
     
+    // console.log("faceWidth", faceWidth, "faceHeight", faceHeight);
+
     this.updateGPUUniforms();
     
     try {
@@ -231,14 +250,16 @@ export abstract class BaseTPS {
       
       // Read the result and convert back to ImageData
       const output = await this.gpu.readBuffer(this.gpu.faceDataBuffer, faceWidth * faceHeight * 4);
-      const imageData = new ImageData(output, faceWidth, faceHeight);
+      const imageData = new ImageData(new Uint8ClampedArray(output), faceWidth, faceHeight);
+      
+      this.gpu.updateFaceDataWithBlurMask(this.blurMask);
+
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       
       // Put the face data at (0, 0) since the canvas is positioned via CSS transform
       this.offscreenCtx.putImageData(imageData, 0, 0);
       this.ctx.drawImage(this.offscreenCanvas, 0, 0, this.canvas.width, this.canvas.height);
       
-      this.gpu.updateFaceDataWithBlurMask(this.blurMask);
     } catch (error) {
       console.error('Error executing GPU shader:', error);
       this.draw(); // Fallback to CPU

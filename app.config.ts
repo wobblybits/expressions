@@ -26,11 +26,11 @@ export default defineConfig({
   ...(isDev ? {} : {
     server: {
       preset: "static",
-      baseURL: isProduction ? "/expressions/" : "/ellipses/.output/public/",
+      baseURL: isProduction ? "/expressions/" : "/expressions/.output/public/",
       serveStatic: true,
       prerender: {
         autoSubfolderIndex: false,
-        routes: ["/", "/camera", "/arithmetic", "/pareidolia", "/transference", "/synth"],
+        routes: ["/", "/camera", "/arithmetic", "/pareidolia", "/transference", "/synth", "/movie"],
       }
     }
   }),

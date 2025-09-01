@@ -3,6 +3,7 @@ import EmotionModel from "../EmotionModel";
 import { BaseTPS, type TPSTransformationPoints } from "./ImageTPS";
 import TPS from "../tps/TPS";
 import meanFace from "../../data/mean.json";
+import { getBBox, calculateConvexHull, isPointInConvexHull, type BBox } from './utils';
 
 class EmotionTPS extends BaseTPS {
     emotionModel: EmotionModel;
@@ -14,28 +15,19 @@ class EmotionTPS extends BaseTPS {
     baseEmotionLevels: EmotionLevels;
     skipLandmarks: number;
 
-    constructor(imageLandmarks: Map<number, number[]>, emotionLevels: EmotionLevels, emotionModel: EmotionModel) {
-        // Store emotion-specific data
-        const tempEmotionModel = emotionModel;
-        const tempEmotionLevels = emotionLevels;
-        
-        // Create a dummy imageData for super constructor - will be set later via initializeGPU
-        const dummyImageData = new ImageData(1, 1);
-        
-        // Create silhouette points first (same as CameraTPS fix)
-        const silhouettePoints = [];
-        for (let i = 0; i < meanFace.length; i += 3) {
-            silhouettePoints.push([meanFace[i], -meanFace[i+1], meanFace[i+2]]);
+    constructor(imageLandmarks: Map<number, number[]>, emotionLevels: EmotionLevels, emotionModel: EmotionModel, imageData: ImageData) {        
+        const referenceLandmarks = [];
+        for (let i = 0; i < meanFace.length; i+=3) {
+            referenceLandmarks.push([meanFace[i], -meanFace[i+1], meanFace[i+2]]);
         }
+        super(imageLandmarks, referenceLandmarks, imageData, 1);
         
-        super(imageLandmarks, dummyImageData, 1, silhouettePoints);
-        
-        this.emotionModel = tempEmotionModel;
-        this.skipLandmarks = 4;
+        this.emotionModel = emotionModel;
+        this.skipLandmarks = 2;
         this.modelPoints = [];
         this.allPoints = [];
 
-        this.baseEmotionLevels = {...NoEmotion, ...tempEmotionLevels};
+        this.baseEmotionLevels = {...NoEmotion, ...emotionLevels};
         const baseEmotion = emotionModel.calculateCompositeEmotion(this.baseEmotionLevels);
         
         // Build model points from emotion + mean face
@@ -48,32 +40,21 @@ class EmotionTPS extends BaseTPS {
             this.allPoints.push([baseEmotion[i] + meanFace[i], baseEmotion[i+1] - meanFace[i+1], baseEmotion[i+2] + meanFace[i+2]]);
         }
 
+        this.initialize();
+
         this.emotionTransforms = [];
-        this.modelBBox = this.getBBox(this.silhouetteHull);
+        this.modelBBox = getBBox(this.silhouetteHull);
 
         // Precompute emotion transforms
         Object.keys(NoEmotion).forEach(key => {
             this.emotionTransforms[key] = this.getEmotionTransform({[key]: 100});
         });
-
-        // IMPORTANT: Call setupTPS after all points are built
-        this.setupTPS();
-
-        console.log("emotionTransforms", this.emotionTransforms);
     }
 
     setupTPS(): void {
         this.baseTPS = new TPS(this.modelPoints, this.imagePoints);
         this.emotionTPS = new TPS(this.allPoints, this.allPoints);
-        this.nilpotentTPS = new TPS(this.imagePoints, this.imagePoints);
-    }
-
-    getSilhouettePoints(): number[][] {
-        const points: number[][] = [];
-        for (let i = 0; i < meanFace.length; i += 3) {
-            points.push([meanFace[i], -meanFace[i+1], meanFace[i+2]]);
-        }
-        return points;
+        this.nilpotentTPS = new TPS(this.allPoints, this.allPoints);
     }
 
     getTransformationPoints(): TPSTransformationPoints {
@@ -88,13 +69,17 @@ class EmotionTPS extends BaseTPS {
         const emotionPoints = [];
         const emotion = this.emotionModel.calculateCompositeEmotion(emotionLevels);
         for (var i=0; i < emotion.length; i+=3*this.skipLandmarks) {
-            emotionPoints.push([emotion[i] + meanFace[i], emotion[i+1] - meanFace[i+1], emotion[i+2] + meanFace[i+2]]);
+            emotionPoints.push([emotion[i] + meanFace[i], -emotion[i+1] - meanFace[i+1]]);
         }
         
-        this.emotionTPS = new TPS(this.allPoints, emotionPoints);
-        
+        const params = this.emotionTPS.updateInverseParameters(emotionPoints);
+        // console.log("params", params);
+        // this.emotionTPS = new TPS(this.allPoints, emotionPoints);
+        // const params = this.emotionTPS.forwardParameters;
+        // console.log("emotionTPS", this.emotionTPS);
         if (this.gpu.initialized) {
-            this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, this.emotionTPS.inverseParameters.Xc, this.emotionTPS.inverseParameters.Yc);
+            this.gpu.updateBuffer(this.gpu.distortPointsBuffer, new Float32Array(params.sourcePoints.flat()));
+            this.gpu.updateCombinedCoeffs(this.gpu.model2distortCoeffsBuffer, new Float32Array(params.Xc), new Float32Array(params.Yc));
         }
         return true;
     }
@@ -111,7 +96,6 @@ class EmotionTPS extends BaseTPS {
             yPrime += emotionLevels[key] * transform[1];
             weights += emotionLevels[key];
         }
-        
         return [xPrime / weights, yPrime / weights];
     }
 
@@ -120,12 +104,6 @@ class EmotionTPS extends BaseTPS {
         // Return identity transform or implement as needed
         return [x, y, 0];
     }
-
-    // Initialize GPU asynchronously (should be called after construction)
-    // async initializeGPU(imageData: ImageData): Promise<void> {
-    //     this.imageData = imageData;
-    //     return super.initializeGPU();
-    // }
 
     // GPU-accelerated transformation method
     async transformGPU(emotionLevels: EmotionLevels): Promise<ImageData | null> {
@@ -160,6 +138,11 @@ class EmotionTPS extends BaseTPS {
 
     // Method to draw using GPU with fallback to CPU
     async drawGPUWithEmotion(emotionLevels: EmotionLevels, originalImageData: ImageData): Promise<void> {
+        if (!this.gpu.initialized) {
+            console.log('GPU not ready, falling back to CPU');
+            this.drawCPU(emotionLevels, originalImageData);
+        }
+
         const gpuResult = await this.transformGPU(emotionLevels);
         
         if (gpuResult) {
@@ -167,7 +150,6 @@ class EmotionTPS extends BaseTPS {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.offscreenCtx.putImageData(gpuResult, 0, 0);
             this.ctx.drawImage(this.offscreenCanvas, 0, 0, this.canvas.width, this.canvas.height);
-            console.log("GPU rendering");
         } else {
             // GPU failed, fallback to CPU
             this.drawCPU(emotionLevels, originalImageData);
@@ -207,7 +189,9 @@ class EmotionTPS extends BaseTPS {
                 }
             }
         }
-        this.ctx.putImageData(new ImageData(newImageData, this.canvas.width, this.canvas.height), 0, 0);
+        this.offscreenCtx.putImageData(new ImageData(newImageData, this.canvas.width, this.canvas.height), 0, 0);
+        this.ctx.drawImage(this.offscreenCanvas, 0, 0, this.canvas.width, this.canvas.height);
+        console.log("CPU rendering");
     }
 
     getEmotionTransform(emotionLevels: EmotionLevels) {
@@ -218,7 +202,7 @@ class EmotionTPS extends BaseTPS {
             emotionPoints.push([emotion[index*3] + meanFace[index*3], emotion[index*3+1] - meanFace[index*3+1], emotion[index*3+2] + meanFace[index*3+2]]);
         }
 
-        const emotionTPS = new TPS(this.modelPoints, emotionPoints);
+        const emotionTPS = new TPS(emotionPoints, this.modelPoints);
         return this.precomputeTransformationMaps(emotionTPS);
     }
 
@@ -227,22 +211,11 @@ class EmotionTPS extends BaseTPS {
         for (let y = this.imageBBox.minY; y < this.imageBBox.maxY; y++) {
           for (let x = this.imageBBox.minX; x < this.imageBBox.maxX; x++) {
             const key = `${x},${y}`;
-            const transform = this.baseTPS.forward(tps.forward(this.baseTPS.inverse([x, y, 0])));
+            const transform = this.baseTPS.forward(tps.inverse(this.baseTPS.inverse([x, y, 0])));
             map.set(key, transform);
           }
         }
         return map;
-    }
-
-    private getBBox(points: number[][]) {
-        return {
-            minX: Math.floor(Math.min(...points.map(p => p[0]))),
-            maxX: Math.ceil(Math.max(...points.map(p => p[0]))),
-            minY: Math.floor(Math.min(...points.map(p => p[1]))),
-            maxY: Math.ceil(Math.max(...points.map(p => p[1]))),
-            minZ: Math.floor(Math.min(...points.map(p => p[2]))),
-            maxZ: Math.ceil(Math.max(...points.map(p => p[2]))),
-        };
     }
 }
   

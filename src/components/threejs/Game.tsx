@@ -103,7 +103,7 @@ const Game: Component<{ id: string, width: number, height: number, expressionMod
     let isInitialized = false;
 
     // Create web worker for agent initialization
-    const worker = new Worker(new URL('../../lib/AgentWorker.ts', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('../../lib/game/AgentWorker.ts', import.meta.url), { type: 'module' });
 
     // Handle worker messages
     worker.onmessage = (e) => {

@@ -84,9 +84,10 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
   let normalizedLandmarks = normalizeLandmarks(mediapipe.vertices);
 
   const calculateDisplayScale = (imageWidth: number, imageHeight: number) => {
-    const screenHeight = window.innerHeight;
-    const targetHeight = screenHeight * 0.8; // 80% of screen height
-    return Math.min(targetHeight / imageHeight, 1); // Don't scale up, only down
+    const maxSize = 640;
+    const scale = Math.min(maxSize / imageHeight, maxSize / imageWidth);
+    console.log("scale", scale, maxSize, imageHeight, imageWidth);
+    return scale;
   };
 
   let clearSVG = () => {};
@@ -100,6 +101,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
   const fixImage = async () => {
     clearSVG();
     if (currentTPS) {
+      currentTPS.getCanvas().remove();
       props.tpsConfig.destroy(currentTPS);
       currentTPS = null;
     }
@@ -127,7 +129,9 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
     }
     
     // Create TPS using the provided configuration
+    console.log("imageLandmarks", imageLandmarks, originalImageData);
     currentTPS = props.tpsConfig.create(imageLandmarks, originalImageData);
+    svgRef.after(currentTPS.getCanvas());
     
     if (props.onImageProcessed) {
       props.onImageProcessed(originalImageData);
@@ -374,6 +378,18 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
             "box-shadow": imageLoaded() ? `${-.5 / displayScale()}em ${.5 / displayScale()}em 0 rgba(0,0,0,.5), ${-1 / displayScale()}em ${1 / displayScale()}em 0 gray` : 'none',
           }}
         ></canvas>
+        <div id="overlays" 
+          style={
+          {
+            width: imageDimensions().width + "px",
+            height: imageDimensions().height + "px",
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            "z-index": 1000
+          }
+        }>
         <svg 
           id="landmarks" 
           ref={svgRef} 
@@ -392,6 +408,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
             filter: "invert(1)"
           }}
         ></svg>
+        </div>
       </div>
       
       {props.controls.render({

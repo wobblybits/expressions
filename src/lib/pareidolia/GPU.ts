@@ -3,6 +3,8 @@
  * Provides GPU-accelerated thin plate spline transformations
  */
 
+import "./WebGPUTypes";
+
 interface GPUBuffers {
   uniformBuffer: GPUBuffer | null;
   meshPointsBuffer: GPUBuffer | null;
@@ -52,12 +54,10 @@ interface GPUBufferUpdates {
 
 export default class GPU implements GPUBuffers {
   public device: GPUDevice | null;
-  public context: GPUCanvasContext | null;
-  public canvas: HTMLCanvasElement | null;
   public commandEncoder: GPUCommandEncoder | null;
   public computePassEncoder: GPUComputePassEncoder | null;
   public initialized: boolean;
-  
+
   // Buffer references
   public uniformBuffer: GPUBuffer | null;
   public meshPointsBuffer: GPUBuffer | null;
@@ -69,7 +69,7 @@ export default class GPU implements GPUBuffers {
   public imageDataBuffer: GPUBuffer | null;
   public faceDataBuffer: GPUBuffer | null;
   public debugBuffer: GPUBuffer | null;
-  
+
   // Bind group
   public bindGroup: GPUBindGroup | null;
   public bindGroupLayout: GPUBindGroupLayout | null;
@@ -78,12 +78,10 @@ export default class GPU implements GPUBuffers {
 
   constructor() {
     this.device = null;
-    this.context = null;
-    this.canvas = null;
     this.commandEncoder = null;
     this.computePassEncoder = null;
     this.initialized = false;
-    
+
     // Buffer references
     this.uniformBuffer = null;
     this.meshPointsBuffer = null;
@@ -95,7 +93,7 @@ export default class GPU implements GPUBuffers {
     this.imageDataBuffer = null;
     this.faceDataBuffer = null;
     this.debugBuffer = null;
-    
+
     // Bind group
     this.bindGroup = null;
     this.bindGroupLayout = null;
@@ -104,45 +102,34 @@ export default class GPU implements GPUBuffers {
   }
 
   /**
-   * Initialize WebGPU device and context
+   * Initialize WebGPU device
    * @returns true if initialization successful
    */
   async initialize(): Promise<boolean> {
     try {
       if (!navigator.gpu) {
-        console.error('WebGPU not supported');
+        console.error("WebGPU not supported");
         return false;
       }
 
       const adapter = await navigator.gpu.requestAdapter();
       if (!adapter) {
-        console.error('No WebGPU adapter found');
+        console.error("No WebGPU adapter found");
         return false;
       }
 
       // Request higher limits for storage buffers
       this.device = await adapter.requestDevice({
         requiredLimits: {
-          maxStorageBuffersPerShaderStage: 10
-        }
+          maxStorageBuffersPerShaderStage: 10,
+        },
       });
-      
-      // Create a hidden canvas for context
-      this.canvas = document.createElement('canvas');
-      this.canvas.style.display = 'none';
-      document.body.appendChild(this.canvas);
-      
-      this.context = this.canvas.getContext('webgpu');
-      if (!this.context) {
-        console.error('WebGPU context not available');
-        return false;
-      }
 
       await this.setupComputeShader();
       this.initialized = true;
       return true;
     } catch (error) {
-      console.error('Failed to initialize WebGPU:', error);
+      console.error("Failed to initialize WebGPU:", error);
       return false;
     }
   }
@@ -152,7 +139,7 @@ export default class GPU implements GPUBuffers {
    */
   async setupComputeShader(): Promise<void> {
     if (!this.device) {
-      throw new Error('Device not initialized');
+      throw new Error("Device not initialized");
     }
 
     // Create bind group layout - now with only 8 storage buffers
@@ -162,62 +149,62 @@ export default class GPU implements GPUBuffers {
         {
           binding: 0,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'uniform' }
+          buffer: { type: "uniform" },
         },
         // Mesh points buffer
         {
           binding: 1,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'read-only-storage' }
+          buffer: { type: "read-only-storage" },
         },
         // Image points buffer
         {
           binding: 2,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'read-only-storage' }
+          buffer: { type: "read-only-storage" },
         },
         // Distort points buffer
         {
           binding: 3,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'read-only-storage' }
+          buffer: { type: "read-only-storage" },
         },
         // Model points buffer
         {
           binding: 4,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'read-only-storage' }
+          buffer: { type: "read-only-storage" },
         },
         // Combined base coefficients (forward and inverse interleaved)
         {
           binding: 5,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'read-only-storage' }
+          buffer: { type: "read-only-storage" },
         },
         // Model2Distort coefficients
         {
           binding: 6,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'read-only-storage' }
+          buffer: { type: "read-only-storage" },
         },
         // Image data buffer - FIXED: Changed to read-only-storage
         {
           binding: 7,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'read-only-storage' }
+          buffer: { type: "read-only-storage" },
         },
         // Face data buffer (with blur mask in alpha)
         {
           binding: 8,
           visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: 'storage' }
-        }
-      ]
+          buffer: { type: "storage" },
+        },
+      ],
     });
 
     // Create pipeline layout
     this.pipelineLayout = this.device.createPipelineLayout({
-      bindGroupLayouts: [this.bindGroupLayout]
+      bindGroupLayouts: [this.bindGroupLayout],
     });
 
     // Compute shader code with TPS transformation implementation
@@ -367,13 +354,17 @@ export default class GPU implements GPUBuffers {
         if (x >= uniforms.faceWidth || y >= uniforms.faceHeight) {
           return;
         }
-        
+
         let faceIndex = y * uniforms.faceWidth + x;
-        
+
         // Add bounds check for buffer access to prevent crashes
         if (faceIndex >= arrayLength(&faceData)) {
           return;
         }
+
+        // DEBUG
+        // faceData[faceIndex] = packRGBA(vec4<f32>(1.0, 0.0, 0.0, 1.0));
+        // return; 
 
         let alpha = faceData[faceIndex] >> 24u;
         if (alpha == 0u) {
@@ -382,7 +373,7 @@ export default class GPU implements GPUBuffers {
 
         // Transform the current pixel coordinates
         let point = vec2<f32>(f32(uniforms.faceMinX + x), f32(uniforms.faceMinY + y));
-        let transformed = point + f32(alpha)/255.0 * (transformXY(point) - point);
+        let transformed = point + f32(alpha)/255.0 * f32(alpha)/255.0 *(transformXY(point) - point);
         
         // Convert float coordinates to integers for sampling
         let sampleX = i32(transformed.x);
@@ -398,10 +389,10 @@ export default class GPU implements GPUBuffers {
       layout: this.pipelineLayout,
       compute: {
         module: this.device.createShaderModule({
-          code: computeShader
+          code: computeShader,
         }),
-        entryPoint: 'main'
-      }
+        entryPoint: "main",
+      },
     });
   }
 
@@ -410,7 +401,7 @@ export default class GPU implements GPUBuffers {
    */
   createBuffers(params: GPUCreateBuffersParams): void {
     if (!this.initialized || !this.device) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return;
     }
 
@@ -422,66 +413,75 @@ export default class GPU implements GPUBuffers {
       faceMinY = 0,
       faceMinX = 0,
       faceWidth = 0,
-      faceHeight = 0
+      faceHeight = 0,
     } = params;
 
     // Uniform buffer
     this.uniformBuffer = this.device.createBuffer({
       size: 8 * 4, // 8 u32 values
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
     // Mesh points buffer
     this.meshPointsBuffer = this.device.createBuffer({
       size: baseNumPoints * 2 * 4, // f32 array
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
     // Image points buffer
     this.imagePointsBuffer = this.device.createBuffer({
       size: baseNumPoints * 2 * 4, // f32 array
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
     // Distort points buffer
     this.distortPointsBuffer = this.device.createBuffer({
       size: distortNumPoints * 2 * 4, // f32 array
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
     // Model points buffer
     this.modelPointsBuffer = this.device.createBuffer({
       size: distortNumPoints * 2 * 4, // f32 array
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
     // Combined base coefficients (forward and inverse interleaved)
     this.baseCoeffsBuffer = this.device.createBuffer({
       size: (baseNumPoints + 3) * 4 * 4, // 4 sets of coefficients (forward X/Y, inverse X/Y), each with baseNumPoints + 3 elements
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
     // Model2Distort coefficients
     this.model2distortCoeffsBuffer = this.device.createBuffer({
       size: (distortNumPoints + 3) * 2 * 4, // X and Y coefficients interleaved
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
     // Image data buffers
     this.imageDataBuffer = this.device.createBuffer({
       size: imageWidth * imageHeight * 4, // u32 array
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
+      usage:
+        GPUBufferUsage.STORAGE |
+        GPUBufferUsage.COPY_DST |
+        GPUBufferUsage.COPY_SRC,
     });
 
     this.faceDataBuffer = this.device.createBuffer({
       size: faceWidth * faceHeight * 4, // u32 array
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
+      usage:
+        GPUBufferUsage.STORAGE |
+        GPUBufferUsage.COPY_DST |
+        GPUBufferUsage.COPY_SRC,
     });
 
     // Debug buffer for transformation values
     this.debugBuffer = this.device.createBuffer({
       size: 1024 * 4, // 1024 f32 values
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
+      usage:
+        GPUBufferUsage.STORAGE |
+        GPUBufferUsage.COPY_DST |
+        GPUBufferUsage.COPY_SRC,
     });
 
     // Create bind group
@@ -496,8 +496,8 @@ export default class GPU implements GPUBuffers {
         { binding: 5, resource: { buffer: this.baseCoeffsBuffer } },
         { binding: 6, resource: { buffer: this.model2distortCoeffsBuffer } },
         { binding: 7, resource: { buffer: this.imageDataBuffer } },
-        { binding: 8, resource: { buffer: this.faceDataBuffer } }
-      ]
+        { binding: 8, resource: { buffer: this.faceDataBuffer } },
+      ],
     });
   }
 
@@ -506,33 +506,57 @@ export default class GPU implements GPUBuffers {
    */
   batchUpdateBuffers(updates: GPUBufferUpdates): void {
     if (!this.initialized || !this.device) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return;
     }
 
     const commandEncoder = this.device.createCommandEncoder();
-    
+
     // Batch all buffer writes
     if (updates.uniforms && this.uniformBuffer) {
       this.device.queue.writeBuffer(this.uniformBuffer, 0, updates.uniforms);
     }
     if (updates.meshPoints && this.meshPointsBuffer) {
-      this.device.queue.writeBuffer(this.meshPointsBuffer, 0, updates.meshPoints);
+      this.device.queue.writeBuffer(
+        this.meshPointsBuffer,
+        0,
+        updates.meshPoints
+      );
     }
     if (updates.imagePoints && this.imagePointsBuffer) {
-      this.device.queue.writeBuffer(this.imagePointsBuffer, 0, updates.imagePoints);
+      this.device.queue.writeBuffer(
+        this.imagePointsBuffer,
+        0,
+        updates.imagePoints
+      );
     }
     if (updates.distortPoints && this.distortPointsBuffer) {
-      this.device.queue.writeBuffer(this.distortPointsBuffer, 0, updates.distortPoints);
+      this.device.queue.writeBuffer(
+        this.distortPointsBuffer,
+        0,
+        updates.distortPoints
+      );
     }
     if (updates.modelPoints && this.modelPointsBuffer) {
-      this.device.queue.writeBuffer(this.modelPointsBuffer, 0, updates.modelPoints);
+      this.device.queue.writeBuffer(
+        this.modelPointsBuffer,
+        0,
+        updates.modelPoints
+      );
     }
     if (updates.baseCoeffs && this.baseCoeffsBuffer) {
-      this.device.queue.writeBuffer(this.baseCoeffsBuffer, 0, updates.baseCoeffs);
+      this.device.queue.writeBuffer(
+        this.baseCoeffsBuffer,
+        0,
+        updates.baseCoeffs
+      );
     }
     if (updates.model2distortCoeffs && this.model2distortCoeffsBuffer) {
-      this.device.queue.writeBuffer(this.model2distortCoeffsBuffer, 0, updates.model2distortCoeffs);
+      this.device.queue.writeBuffer(
+        this.model2distortCoeffsBuffer,
+        0,
+        updates.model2distortCoeffs
+      );
     }
     if (updates.imageData && this.imageDataBuffer) {
       this.device.queue.writeBuffer(this.imageDataBuffer, 0, updates.imageData);
@@ -540,7 +564,7 @@ export default class GPU implements GPUBuffers {
     if (updates.faceData && this.faceDataBuffer) {
       this.device.queue.writeBuffer(this.faceDataBuffer, 0, updates.faceData);
     }
-    
+
     // Submit all updates in one command
     this.device.queue.submit([commandEncoder.finish()]);
   }
@@ -550,7 +574,7 @@ export default class GPU implements GPUBuffers {
    */
   updateUniforms(uniforms: GPUUniforms): void {
     if (!this.initialized || !this.device || !this.uniformBuffer) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return;
     }
 
@@ -562,8 +586,10 @@ export default class GPU implements GPUBuffers {
       uniforms.faceMinY || 0,
       uniforms.faceMinX || 0,
       uniforms.faceWidth || 0,
-      uniforms.faceHeight || 0
+      uniforms.faceHeight || 0,
     ]);
+    
+    // console.log("- Uniform buffer:", uniformData);
 
     this.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData);
   }
@@ -573,7 +599,7 @@ export default class GPU implements GPUBuffers {
    */
   updateBuffer(buffer: GPUBuffer, data: Float32Array): void {
     if (!this.initialized || !this.device) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return;
     }
     this.device.queue.writeBuffer(buffer, 0, data);
@@ -584,7 +610,7 @@ export default class GPU implements GPUBuffers {
    */
   updateUintBuffer(buffer: GPUBuffer, data: Uint32Array): void {
     if (!this.initialized || !this.device) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return;
     }
     this.device.queue.writeBuffer(buffer, 0, data);
@@ -593,48 +619,62 @@ export default class GPU implements GPUBuffers {
   /**
    * Update combined base coefficients buffer (forward and inverse interleaved)
    */
-  updateBaseCoeffs(forwardX: Float32Array, forwardY: Float32Array, inverseX: Float32Array, inverseY: Float32Array): void {
+  updateBaseCoeffs(
+    forwardX: Float32Array,
+    forwardY: Float32Array,
+    inverseX: Float32Array,
+    inverseY: Float32Array
+  ): void {
     if (!this.initialized || !this.device || !this.baseCoeffsBuffer) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return;
     }
-    
+
     const baseNumPoints = forwardX.length - 3;
     const coeffsOffset = baseNumPoints + 3;
-    
+
     // Check buffer size and adjust if necessary
     const bufferSizeInFloats = this.baseCoeffsBuffer.size / 4;
     const requiredSize = coeffsOffset * 4;
-    
+
     if (requiredSize > bufferSizeInFloats) {
-      console.error('Buffer too small for coefficients. Need', requiredSize, 'floats, buffer has', bufferSizeInFloats);
+      console.error(
+        "Buffer too small for coefficients. Need",
+        requiredSize,
+        "floats, buffer has",
+        bufferSizeInFloats
+      );
       return;
     }
-    
+
     // Create combined array: [forwardX, forwardY, inverseX, inverseY]
     const combinedCoeffs = new Float32Array(requiredSize);
-    
+
     // Copy forward coefficients (first two blocks)
     for (let i = 0; i < coeffsOffset; i++) {
-      combinedCoeffs[i] = forwardX[i];                    // forwardX
-      combinedCoeffs[i + coeffsOffset] = forwardY[i];     // forwardY
+      combinedCoeffs[i] = forwardX[i]; // forwardX
+      combinedCoeffs[i + coeffsOffset] = forwardY[i]; // forwardY
     }
-    
+
     // Copy inverse coefficients (last two blocks)
     for (let i = 0; i < coeffsOffset; i++) {
       combinedCoeffs[i + coeffsOffset * 2] = inverseX[i]; // inverseX
       combinedCoeffs[i + coeffsOffset * 3] = inverseY[i]; // inverseY
     }
-    
+
     this.device.queue.writeBuffer(this.baseCoeffsBuffer, 0, combinedCoeffs);
   }
 
   /**
    * Update combined coefficients buffer (X and Y interleaved) for active TPS
    */
-  updateCombinedCoeffs(buffer: GPUBuffer, Xc: Float32Array, Yc: Float32Array): void {
+  updateCombinedCoeffs(
+    buffer: GPUBuffer,
+    Xc: Float32Array,
+    Yc: Float32Array
+  ): void {
     if (!this.initialized || !this.device) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return;
     }
 
@@ -651,16 +691,15 @@ export default class GPU implements GPUBuffers {
    */
   updateFaceDataWithBlurMask(blurMask: Uint8Array): void {
     if (!this.initialized || !this.device || !this.faceDataBuffer) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return;
     }
 
     const faceData = new Uint32Array(blurMask.length);
     for (let i = 0; i < blurMask.length; i++) {
       // Pack blur mask value into alpha channel
-      faceData[i] = (blurMask[i] << 24);
+      faceData[i] = blurMask[i] << 24;
     }
-    
     this.device.queue.writeBuffer(this.faceDataBuffer, 0, faceData);
   }
 
@@ -668,43 +707,177 @@ export default class GPU implements GPUBuffers {
    * Execute compute shader with dynamic workgroup sizing
    * @returns Promise that resolves when execution is complete
    */
-  async execute(faceWidth: number, faceHeight: number): Promise<void> {
-    if (!this.initialized || !this.device || !this.computePipeline || !this.bindGroup) {
-      console.error('GPU not initialized');
-      return Promise.reject(new Error('GPU not initialized'));
+  async execute(
+    faceWidth: number,
+    faceHeight: number,
+    debug: boolean = false
+  ): Promise<void> {
+    if (debug) {
+      console.log("=== GPU EXECUTE DEBUG START ===");
+      console.log("GPU initialized:", this.initialized);
+      console.log("Device exists:", !!this.device);
+      console.log("Compute pipeline exists:", !!this.computePipeline);
+      console.log("Bind group exists:", !!this.bindGroup);
+      console.log("Face dimensions:", { faceWidth, faceHeight });
+    }
+    if (
+      !this.initialized ||
+      !this.device ||
+      !this.computePipeline ||
+      !this.bindGroup
+    ) {
+      console.error("GPU not initialized - missing components");
+      console.error("Initialized:", this.initialized);
+      console.error("Device:", !!this.device);
+      console.error("Pipeline:", !!this.computePipeline);
+      console.error("BindGroup:", !!this.bindGroup);
+      return Promise.reject(new Error("GPU not initialized"));
     }
 
     const workgroupSize = 8; // 8x8 = 64 threads per workgroup
     const workgroupCountX = Math.ceil(faceWidth / workgroupSize);
     const workgroupCountY = Math.ceil(faceHeight / workgroupSize);
-    
-    this.commandEncoder = this.device.createCommandEncoder();
-    this.computePassEncoder = this.commandEncoder.beginComputePass();
-    
-    this.computePassEncoder.setPipeline(this.computePipeline);
-    this.computePassEncoder.setBindGroup(0, this.bindGroup);
 
-    this.computePassEncoder.dispatchWorkgroups(workgroupCountX, workgroupCountY);
-    
-    this.computePassEncoder.end();
-    this.device.queue.submit([this.commandEncoder.finish()]);
-    
-    return Promise.resolve();
+    if (debug) {
+      console.log("Workgroup calculations:", {
+        workgroupSize,
+        workgroupCountX,
+        workgroupCountY,
+        totalWorkgroups: workgroupCountX * workgroupCountY,
+      });
+      console.log("Buffer states before execution:");
+      console.log("- Uniform buffer size:", this.uniformBuffer?.size);
+      console.log("- Mesh points buffer size:", this.meshPointsBuffer?.size);
+      console.log("- Image points buffer size:", this.imagePointsBuffer?.size);
+      console.log(
+        "- Distort points buffer size:",
+        this.distortPointsBuffer?.size
+      );
+      console.log("- Model points buffer size:", this.modelPointsBuffer?.size);
+      console.log("- Base coeffs buffer size:", this.baseCoeffsBuffer?.size);
+      console.log(
+        "- Model2distort coeffs buffer size:",
+        this.model2distortCoeffsBuffer?.size
+      );
+      console.log("- Image data buffer size:", this.imageDataBuffer?.size);
+      console.log("- Face data buffer size:", this.faceDataBuffer?.size);
+      console.log("- Debug buffer size:", this.debugBuffer?.size);
+    }
+    // Add this debug check for image data
+    if (debug && this.imageDataBuffer) {
+      console.log("Image data buffer exists, checking if it has data...");
+      // Try to read a small sample from the image data buffer
+      const sampleSize = Math.min(16, this.imageDataBuffer.size);
+      const stagingBuffer = this.device!.createBuffer({
+        size: sampleSize,
+        usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+      });
+
+      const commandEncoder = this.device!.createCommandEncoder();
+      commandEncoder.copyBufferToBuffer(
+        this.imageDataBuffer,
+        0,
+        stagingBuffer,
+        0,
+        sampleSize
+      );
+      this.device!.queue.submit([commandEncoder.finish()]);
+
+      await stagingBuffer.mapAsync(GPUMapMode.READ);
+      const sampleData = stagingBuffer.getMappedRange();
+      console.log("First 16 bytes of image data:", new Uint8Array(sampleData));
+      stagingBuffer.unmap();
+    }
+
+    try {
+      this.commandEncoder = this.device.createCommandEncoder();
+      if (debug) {
+        console.log("Command encoder created");
+      }
+
+      this.computePassEncoder = this.commandEncoder.beginComputePass();
+      if (debug) {
+        console.log("Compute pass encoder created");
+      }
+
+      this.computePassEncoder.setPipeline(this.computePipeline);
+      if (debug) {
+        console.log("Pipeline set");
+      }
+
+      this.computePassEncoder.setBindGroup(0, this.bindGroup);
+      if (debug) {
+        console.log("Bind group set");
+      }
+
+      if (debug) {
+      console.log(
+        "Dispatching workgroups:",
+        workgroupCountX,
+          "x",
+          workgroupCountY
+        );
+      }
+      this.computePassEncoder.dispatchWorkgroups(
+        workgroupCountX,
+        workgroupCountY
+      );
+      if (debug) {
+        console.log("Workgroups dispatched");
+      }
+
+      this.computePassEncoder.end();
+      if (debug) {
+        console.log("Compute pass ended");
+      }
+
+      const commandBuffer = this.commandEncoder.finish();
+
+      if (debug) {
+        console.log("Submitting command buffer to device queue...");
+      }
+      this.device.queue.submit([commandBuffer]);
+      if (debug) {
+        console.log("Command buffer submitted to queue");
+      }
+
+      // Add this debug read to see what the shader actually wrote
+      if (debug) {
+        console.log("Reading debug buffer to see shader output...");
+      }
+      const debugData = await this.readBuffer(this.debugBuffer!, 64); // Read first 64 bytes
+      if (debug) {
+        console.log("Debug buffer contents:", debugData);
+      }
+
+      if (debug) {
+        console.log("=== GPU EXECUTE DEBUG END ===");
+      }
+      return Promise.resolve();
+    } catch (error) {
+      console.error("=== GPU EXECUTE ERROR ===");
+      console.error("Error during GPU execution:", error);
+      console.error("Error stack:", error.stack);
+      throw error;
+    }
   }
 
   /**
    * Read data from buffer
    * @returns Buffer data
    */
-  async readBuffer(buffer: GPUBuffer, size: number): Promise<Uint8ClampedArray> {
+  async readBuffer(
+    buffer: GPUBuffer,
+    size: number
+  ): Promise<Uint8ClampedArray> {
     if (!this.initialized || !this.device) {
-      console.error('GPU not initialized');
+      console.error("GPU not initialized");
       return new Uint8ClampedArray(0);
     }
 
     const stagingBuffer = this.device.createBuffer({
       size: size,
-      usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
     });
 
     const commandEncoder = this.device.createCommandEncoder();
@@ -713,13 +886,12 @@ export default class GPU implements GPUBuffers {
 
     await stagingBuffer.mapAsync(GPUMapMode.READ);
     const data = stagingBuffer.getMappedRange();
-    
+
     // Copy the data before unmapping to avoid detachment issues
     const result = new Uint8ClampedArray(data);
     const copiedData = new Uint8ClampedArray(result);
-    
+
     stagingBuffer.unmap();
-    
     return copiedData;
   }
 
@@ -727,20 +899,22 @@ export default class GPU implements GPUBuffers {
    * Clean up resources
    */
   destroy(): void {
-    if (this.canvas && this.canvas.parentNode) {
-      this.canvas.parentNode.removeChild(this.canvas);
-    }
-    
     // Destroy buffers
     const buffers = [
-      this.uniformBuffer, this.meshPointsBuffer, this.imagePointsBuffer,
-      this.distortPointsBuffer, this.modelPointsBuffer, this.baseCoeffsBuffer,
-      this.model2distortCoeffsBuffer, this.imageDataBuffer, this.faceDataBuffer,
-      this.debugBuffer
+      this.uniformBuffer,
+      this.meshPointsBuffer,
+      this.imagePointsBuffer,
+      this.distortPointsBuffer,
+      this.modelPointsBuffer,
+      this.baseCoeffsBuffer,
+      this.model2distortCoeffsBuffer,
+      this.imageDataBuffer,
+      this.faceDataBuffer,
+      this.debugBuffer,
     ];
-    
-    buffers.forEach(buffer => {
+
+    buffers.forEach((buffer) => {
       if (buffer) buffer.destroy();
     });
   }
-} 
+}

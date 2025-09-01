@@ -47,7 +47,7 @@ class FaceMeshCamera {
         refineLandmarks: true,
       });
 
-      // Set up results handling - use 'any' type for results
+      // Set up results handling for every frame
       this.faceMesh.onResults((results: any) => {
         if (results.multiFaceLandmarks && this.onLandmarksCallback) {
           const regularizedLandmarks = this.regularizeLandmarks(results.multiFaceLandmarks[0]);
@@ -74,6 +74,8 @@ class FaceMeshCamera {
   private regularizeLandmarks(landmarks: FaceLandmarks[], imageScale: number = 1): number[][] {
     // Calculate face center
     if (!landmarks) return [];
+
+    return landmarks.map(l => [l.x*1000,-l.y*1000]);
 
     const center = {
       x: landmarks.reduce((sum, l) => sum + l.x, 0) / landmarks.length,

@@ -1,7 +1,7 @@
 import type { Component } from 'solid-js';
 import ExpressionModel from '../lib/threejs/ExpressionModel';
 import EmotionModel from '../lib/EmotionModel';
-import Game from '../../../components/mesh/Game';
+import Game from '../components/threejs/Game';
 
 const GamePage: Component = () => {
   const emotionModel = new EmotionModel();

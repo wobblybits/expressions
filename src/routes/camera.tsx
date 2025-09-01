@@ -1,9 +1,8 @@
 import { Component, lazy } from 'solid-js';
-import ClientOnly from '../components/ui/ClientOnly';
 import PageLayout from '../components/ui/PageLayout';
 import CameraPage from '../pages/CameraPage';
 
-const Home: Component = () => {
+const Camera: Component = () => {
   return (
     <PageLayout 
       title="Emotional Expression Camera" 
@@ -14,4 +13,4 @@ const Home: Component = () => {
   );
 };
 
-export default Home;
+export default Camera;
