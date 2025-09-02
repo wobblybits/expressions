@@ -20,10 +20,8 @@ const PareidoliaCam: Component<{}> = (props) => {
   const PROCESSING_SCALE = 1;
 
   const faceMeshCamera = new FaceMeshCamera(async (landmarks) => {
-    
     // capture first frame and save as reference, don't draw
     if (landmarks.length > 0 && !cameraLandmarks) {
-      console.log("first framecameraLandmarks", landmarks);
       cameraLandmarks = landmarks;
       return;
     }
@@ -55,74 +53,11 @@ const PareidoliaCam: Component<{}> = (props) => {
     });
   });
 
-  const handleFeatureComplete = (feature: string, points: any[]) => {
-    console.log("featureComplete", feature, points);
-    // Handle feature completion if needed
-  };
-
-  const handleImageProcessed = (imageData: ImageData) => {
-    console.log("imageProcessed", imageData, cameraLandmarks);
-    setOriginalImageData(imageData);
-  };
-
-  const handleViewPoints = () => {
-    console.log("viewPoints");
-  };
-
   return (
     <PareidoliaCore
       controls={{
         render: (props) => (
-          <div
-            style={{
-              display: "flex",
-              "flex-direction": "column",
-              "align-items": "center",
-              "justify-content": "center",
-              width: "300px",
-            }}
-          >
-            <h1>Pareidolia</h1>
-            <div id="controls">
-              <div style={{ position: "relative" }}>
-                <Face id="face" ref={faceRef} width={140} height={140} />
-                <svg
-                  id="face-svg"
-                  ref={faceSvgRef}
-                  width={140}
-                  height={140}
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                  }}
-                ></svg>
-              </div>
-              <h4>Layers</h4>
-              <div id="layers">
-                <input
-                  type="button"
-                  value="Mask"
-                  onClick={() => setCurrentLayer("mask")}
-                />
-                <input
-                  type="button"
-                  value="Basics"
-                  onClick={() => setCurrentLayer("basics")}
-                />
-              </div>
-              <h4>{props.featureName}</h4>
-              <div>Drag and drop an image to get started.</div>
-              <input type="button" value="Back" onClick={props.onBack} />
-              <input type="button" value="Skip" onClick={props.onSkip} />
-              <input type="button" value="Next" onClick={props.onNext} />
-              <br />
-              <input
-                type="button"
-                value="Do it!"
-                onClick={props.onProcess}
-              />
+          <>
               <h4>Camera</h4>
               <input
                 type="button"
@@ -140,14 +75,7 @@ const PareidoliaCam: Component<{}> = (props) => {
                   faceMeshCamera.stop();
                 }}
               />
-              <br />
-              <input
-                type="button"
-                value="View Points"
-                onClick={handleViewPoints}
-              />
-            </div>
-          </div>
+            </>
         ),
       }}
       tpsConfig={{
@@ -169,8 +97,7 @@ const PareidoliaCam: Component<{}> = (props) => {
           setCameraTPS(null);
         },
       }}
-      onFeatureComplete={handleFeatureComplete}
-      onImageProcessed={handleImageProcessed}
+      setOriginalImageData={setOriginalImageData}
     />
   );
 };

@@ -15,14 +15,6 @@ const Pareidolia: Component<{ emotionModel: EmotionModel }> = (props) => {
   const [originalImageData, setOriginalImageData] =
     createSignal<ImageData | null>(null);
 
-  const handleFeatureComplete = (feature: string, points: any[]) => {
-    // Handle feature completion if needed
-  };
-
-  const handleImageProcessed = (imageData: ImageData) => {
-    setOriginalImageData(imageData);
-  };
-
   const handleEmotionUpdate = async (emotionLevels: any) => {
     if (isThinking() || !emotionTPS()) return;
 
@@ -83,23 +75,12 @@ const Pareidolia: Component<{ emotionModel: EmotionModel }> = (props) => {
 
   return (
     <PareidoliaCore
+      emotions={{
+        model: emotionModel,
+        callback: handleEmotionUpdate,
+      }}
       controls={{
-        render: (props) => (
-          <Controls
-            title="Pareidolia"
-            emotionModel={emotionModel}
-            callback={handleEmotionUpdate}
-            {...props}
-          >
-            <h4>{props.featureName}</h4>
-            <div>Drag and drop an image to get started.</div>
-            <input type="button" value="Back" onClick={props.onBack} />
-            <input type="button" value="Skip" onClick={props.onSkip} />
-            <input type="button" value="Next" onClick={props.onNext} />
-            <br />
-            <input type="button" value="Do it!" onClick={props.onProcess} />
-          </Controls>
-        ),
+        render: (props) => (<></>),
       }}
       tpsConfig={{
         create: (landmarks, imageData, displayScale) => {
@@ -121,8 +102,7 @@ const Pareidolia: Component<{ emotionModel: EmotionModel }> = (props) => {
           setEmotionTPS(null);
         },
       }}
-      onFeatureComplete={handleFeatureComplete}
-      onImageProcessed={handleImageProcessed}
+      setOriginalImageData={setOriginalImageData}
     />
   );
 };

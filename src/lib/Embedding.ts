@@ -12,6 +12,9 @@ export class Embedding {
     labels: Emotion[];
     meanEmbedding: number[];
     meanProjection: number[];
+    basisTranslation: { [key in Emotion]: string }
+    adjectiveBasis: { [key in Emotion]: string }
+    nounBasis: { [key in Emotion]: string }
 
     constructor() {
         this.embeddings = embeddings;
@@ -22,9 +25,30 @@ export class Embedding {
         this.meanEmbedding = this.getMeanVector(this.embeddings);
         this.meanProjection = this.getMeanVector(this.projections);
         this.projections = this.meanCenterAndNormalize(this.projections);
-        this.embeddings = this.meanCenterAndNormalize(this.embeddings);
+        // this.embeddings = this.meanCenterAndNormalize(this.embeddings);
         console.log(this.meanEmbedding, this.meanProjection, this.getClosestWordByEmbedding(this.meanEmbedding), this.getClosestWordByProjection(this.meanProjection));
         this.primary = Object.keys(NoEmotion).reduce((acc, label) => { acc[label] = this.embeddings[label]; return acc; }, {}) as { [key in Emotion]: number[] };
+        this.adjectiveBasis = {
+            angry: "angry",
+            contempt: "contemptuous",
+            disgust: "disgusted",
+            fear: "fearful",
+            happy: "happy",
+            neutral: "neutral",
+            sad: "sad",
+            surprise: "surprised",
+        }
+        this.nounBasis = {
+            angry: "anger",
+            contempt: "contempt",
+            disgust: "disgust",
+            fear: "fear",
+            happy: "joy",
+            neutral: "neutrality",
+            sad: "sadness",
+            surprise: "surprise",
+        }
+        this.basisTranslation = this.adjectiveBasis;
     }
 
     normalize(vector: number[]): number[] {
@@ -75,7 +99,7 @@ export class Embedding {
 
     emotionLevelsToProjection(emotions: EmotionLevels): number[] {
         //return Object.keys(emotions).reduce((acc, label, i) => { acc[i] += (emotions[label] || 0) * this.projections[label][i]; return acc; }, new Array(this.labels.length).fill(0));
-        const vector = Object.keys(emotions).reduce((acc, label) => { this.projections[label].map((val, i) => { acc[i] += (val * (emotions[label] || 0)); }); return acc; }, new Array(this.labels.length).fill(0));
+        const vector = Object.keys(emotions).reduce((acc, label) => { this.projections[this.basisTranslation[label]].map((val, i) => { acc[i] += (val * (emotions[label] || 0)); }); return acc; }, new Array(this.labels.length).fill(0));
         return vector;
     }
 
