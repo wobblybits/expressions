@@ -70,11 +70,13 @@ const PareidoliaMovie: Component<{}> = (props) => {
         ),
       }}
       tpsConfig={{
-        create: (landmarks, imageData) => {
+        create: (landmarks, imageData, blurMask, imageBBox) => {
           const tps = new CameraTPS(
             landmarks,
             cameraLandmarks,
             imageData,
+            blurMask,
+            imageBBox,
             PROCESSING_SCALE
           );
           setCurrentTPS(tps);

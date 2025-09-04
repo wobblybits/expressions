@@ -421,43 +421,43 @@ export default class GPU implements GPUBuffers {
       size: 8 * 4, // 8 u32 values
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-
+    console.log("Uniform buffer created of size", this.uniformBuffer?.size);
     // Mesh points buffer
     this.meshPointsBuffer = this.device.createBuffer({
       size: baseNumPoints * 2 * 4, // f32 array
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
-
+    console.log("Mesh points buffer created of size", this.meshPointsBuffer?.size);
     // Image points buffer
     this.imagePointsBuffer = this.device.createBuffer({
       size: baseNumPoints * 2 * 4, // f32 array
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
-
+    console.log("Image points buffer created of size", this.imagePointsBuffer?.size);
     // Distort points buffer
     this.distortPointsBuffer = this.device.createBuffer({
       size: distortNumPoints * 2 * 4, // f32 array
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
-
+    console.log("Distort points buffer created of size", this.distortPointsBuffer?.size);
     // Model points buffer
     this.modelPointsBuffer = this.device.createBuffer({
       size: distortNumPoints * 2 * 4, // f32 array
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
-
+    console.log("Model points buffer created of size", this.modelPointsBuffer?.size);
     // Combined base coefficients (forward and inverse interleaved)
     this.baseCoeffsBuffer = this.device.createBuffer({
       size: (baseNumPoints + 3) * 4 * 4, // 4 sets of coefficients (forward X/Y, inverse X/Y), each with baseNumPoints + 3 elements
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
-
+    console.log("Base coefficients buffer created of size", this.baseCoeffsBuffer?.size);
     // Model2Distort coefficients
     this.model2distortCoeffsBuffer = this.device.createBuffer({
       size: (distortNumPoints + 3) * 2 * 4, // X and Y coefficients interleaved
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
-
+    console.log("Model2Distort coefficients buffer created of size", this.model2distortCoeffsBuffer?.size);
     // Image data buffers
     this.imageDataBuffer = this.device.createBuffer({
       size: imageWidth * imageHeight * 4, // u32 array
@@ -466,7 +466,7 @@ export default class GPU implements GPUBuffers {
         GPUBufferUsage.COPY_DST |
         GPUBufferUsage.COPY_SRC,
     });
-
+    console.log("Image data buffer created of size", this.imageDataBuffer?.size);
     this.faceDataBuffer = this.device.createBuffer({
       size: faceWidth * faceHeight * 4, // u32 array
       usage:
@@ -474,7 +474,7 @@ export default class GPU implements GPUBuffers {
         GPUBufferUsage.COPY_DST |
         GPUBufferUsage.COPY_SRC,
     });
-
+    console.log("Face data buffer created of size", this.faceDataBuffer?.size);
     // Debug buffer for transformation values
     this.debugBuffer = this.device.createBuffer({
       size: 1024 * 4, // 1024 f32 values
@@ -483,7 +483,7 @@ export default class GPU implements GPUBuffers {
         GPUBufferUsage.COPY_DST |
         GPUBufferUsage.COPY_SRC,
     });
-
+    console.log("Debug buffer created of size", this.debugBuffer?.size);  
     // Create bind group
     this.bindGroup = this.device.createBindGroup({
       layout: this.bindGroupLayout!,
@@ -499,6 +499,7 @@ export default class GPU implements GPUBuffers {
         { binding: 8, resource: { buffer: this.faceDataBuffer } },
       ],
     });
+    console.log("Bind group created");
   }
 
   /**
@@ -512,6 +513,7 @@ export default class GPU implements GPUBuffers {
 
     const commandEncoder = this.device.createCommandEncoder();
 
+    try {
     // Batch all buffer writes
     if (updates.uniforms && this.uniformBuffer) {
       this.device.queue.writeBuffer(this.uniformBuffer, 0, updates.uniforms);
@@ -568,6 +570,10 @@ export default class GPU implements GPUBuffers {
     // Submit all updates in one command
     this.device.queue.submit([commandEncoder.finish()]);
   }
+  catch (error) {
+    console.error("Error updating buffers:", error);
+  }
+  }
 
   /**
    * Update uniform buffer with scalar values
@@ -590,8 +596,11 @@ export default class GPU implements GPUBuffers {
     ]);
     
     // console.log("- Uniform buffer:", uniformData);
-
+try {
     this.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData);
+} catch (error) {
+  console.error("Error updating uniforms:", error);
+}
   }
 
   /**
@@ -602,7 +611,11 @@ export default class GPU implements GPUBuffers {
       console.error("GPU not initialized");
       return;
     }
+    try {
     this.device.queue.writeBuffer(buffer, 0, data);
+} catch (error) {
+  console.error("Error updating buffer:", error);
+}
   }
 
   /**
@@ -613,7 +626,11 @@ export default class GPU implements GPUBuffers {
       console.error("GPU not initialized");
       return;
     }
+    try {
     this.device.queue.writeBuffer(buffer, 0, data);
+} catch (error) {
+  console.error("Error updating uint buffer:", error);
+}
   }
 
   /**
@@ -662,7 +679,11 @@ export default class GPU implements GPUBuffers {
       combinedCoeffs[i + coeffsOffset * 3] = inverseY[i]; // inverseY
     }
 
+    try {
     this.device.queue.writeBuffer(this.baseCoeffsBuffer, 0, combinedCoeffs);
+} catch (error) {
+  console.error("Error updating base coefficients:", error);
+}
   }
 
   /**
@@ -683,13 +704,17 @@ export default class GPU implements GPUBuffers {
       combined[i] = Xc[i];
       combined[i + Xc.length] = Yc[i];
     }
+    try {
     this.device.queue.writeBuffer(buffer, 0, combined);
+} catch (error) {
+  console.error("Error updating combined coefficients:", error);
+}
   }
 
   /**
    * Update face data buffer with blur mask in alpha channel
    */
-  updateFaceDataWithBlurMask(blurMask: Uint8Array): void {
+  updateFaceDataWithBlurMask(blurMask: Uint8ClampedArray): void {
     if (!this.initialized || !this.device || !this.faceDataBuffer) {
       console.error("GPU not initialized");
       return;
@@ -700,7 +725,11 @@ export default class GPU implements GPUBuffers {
       // Pack blur mask value into alpha channel
       faceData[i] = blurMask[i] << 24;
     }
+    try {
     this.device.queue.writeBuffer(this.faceDataBuffer, 0, faceData);
+} catch (error) {
+  console.error("Error updating face data:", error);
+}
   }
 
   /**
@@ -836,7 +865,11 @@ export default class GPU implements GPUBuffers {
       if (debug) {
         console.log("Submitting command buffer to device queue...");
       }
+      try {
       this.device.queue.submit([commandBuffer]);
+} catch (error) {
+  console.error("Error submitting command buffer:", error);
+}
       if (debug) {
         console.log("Command buffer submitted to queue");
       }
@@ -846,8 +879,12 @@ export default class GPU implements GPUBuffers {
         console.log("Reading debug buffer to see shader output...");
       }
       const debugData = await this.readBuffer(this.debugBuffer!, 64); // Read first 64 bytes
+      try {
       if (debug) {
         console.log("Debug buffer contents:", debugData);
+      }
+} catch (error) {
+  console.error("Error reading debug buffer:", error);
       }
 
       if (debug) {

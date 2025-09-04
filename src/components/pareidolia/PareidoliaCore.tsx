@@ -6,9 +6,9 @@ import meanFace from "../../data/mean.json";
 import Face from "../threejs/Face";
 import TPS from "../../lib/tps/TPS";
 import EmotionModel, { NoEmotion, EmotionLevels } from "../../lib/EmotionModel";
-import ExpressionModel from "~/lib/threejs/ExpressionModel";
+import ExpressionModel from "../../lib/threejs/ExpressionModel";
 import { Show, For } from "solid-js";
-
+import presets from "../../data/pareidolia.json";
 const padding = 0;
 
 interface Point {
@@ -49,6 +49,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
   let containerRef: HTMLDivElement | undefined;
   let faceRef: typeof Face | undefined;
   let faceSvgRef: SVGSVGElement | undefined;
+  let overlaysRef: HTMLDivElement | undefined;
   const { setOriginalImageData } = props;
 
   const [imageLoaded, setImageLoaded] = createSignal(false);
@@ -58,14 +59,70 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
   });
   const [displayScale, setDisplayScale] = createSignal(1);
   const [featureName, setFeatureName] = createSignal("Upload an Image");
+  const [presetConfig, setPresetConfig] = createSignal(
+    Object.values(presets)[0]
+  );
+  let presetsRef: HTMLDivElement | undefined;
 
-  const fixedPoints: any = { points: [] };
-  let currentFeature = 0;
+  let blurMask: Uint8ClampedArray | undefined;
+  dataUrlToMask(presetConfig().blurMask);
+
+  let fixedPoints: any = { points: [], ...presetConfig().fixedPoints };
+  if (presetConfig().fixedPoints) {
+    fixedPoints.points = Object.values(
+      presetConfig().fixedPoints.points
+    ).reduce((acc, point: any, i) => {
+      acc[point.index] = point;
+      return acc;
+    }, []);
+  }
+  if (presetConfig().image) {
+    loadImage(presetConfig().image);
+  }
+  let currentFeature = presetConfig().currentFeature || 0;
   let originalImageData: ImageData | undefined;
   let currentTPS: any = null;
 
-  let editingMode = "feature";
-  const [currentLayer, setCurrentLayer] = createSignal("basics");
+  let editingMode = presetConfig().currentFeature >= 3 ? "points" : "feature";
+  console.log("editingMode", editingMode);
+  const [currentLayer, setCurrentLayer] = createSignal(
+    presetConfig().currentFeature >= 3 ? "silhouette" : "basics"
+  );
+
+  function loadPreset(presetName: string) {
+    setPresetConfig(presets[presetName]);
+    if (currentTPS) {
+      currentTPS.getCanvas().remove();
+      props.tpsConfig.destroy(currentTPS);
+      currentTPS = null;
+    }
+    if (presets[presetName].image) {
+      loadImage(presets[presetName].image);
+    } else {
+      setImageLoaded(false);
+    }
+    if (presets[presetName].blurMask) {
+      dataUrlToMask(presets[presetName].blurMask);
+    } else {
+      blurMask = undefined;
+    }
+    fixedPoints = { points: [], ...presets[presetName].fixedPoints };
+    if (presetConfig().fixedPoints) {
+      fixedPoints.points = Object.values(
+        presetConfig().fixedPoints.points
+      ).reduce((acc, point: any, i) => {
+        acc[point.index] = point;
+        return acc;
+      }, []);
+    }
+    currentFeature = presetConfig().currentFeature || 0;
+    editingMode = presetConfig().currentFeature >= 3 ? "points" : "feature";
+    setCurrentLayer(
+      presetConfig().currentFeature >= 3 ? "silhouette" : "basics"
+    );
+
+    clearSVG();
+  }
 
   const normalizeLandmarks = (landmarks: number[]) => {
     const currentWidth = imageDimensions().width;
@@ -89,9 +146,9 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
   let normalizedLandmarks = normalizeLandmarks(mediapipe.vertices);
 
   const calculateDisplayScale = (imageWidth: number, imageHeight: number) => {
-    const maxSize = 640;
-    const scale = Math.min(maxSize / imageHeight, maxSize / imageWidth);
-    console.log("scale", scale, maxSize, imageHeight, imageWidth);
+    const maxXSize = 640;
+    const maxYSize = 480;
+    const scale = Math.min(maxXSize / imageWidth, maxYSize / imageHeight);
     return scale;
   };
 
@@ -136,6 +193,12 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
         }
       }
     }
+    console.log(
+      "registrationPoints",
+      editingMode,
+      registrationPoints,
+      fixedPoints["points"]
+    );
     for (const point of fixedPoints["points"]) {
       if (!point) continue;
       registrationPoints.push([point.x, point.y, 0]);
@@ -145,13 +208,19 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
         mediapipe.vertices[point.index * 3 + 2],
       ]);
     }
+    // console.log("registrationPoints", registrationPoints, fixedPoints["points"]);
     // console.log(registrationPoints);
     // console.log(registrationLandmarks);
     // console.log(fixedPoints);
-    if (registrationPoints.length > 5 && !isThinking) {
+    if (registrationPoints.length > 5 && currentFeature >= 3 && !isThinking) {
       editingMode = "points";
       isThinking = true;
       requestAnimationFrame(() => {
+        console.log(
+          "registrationTPS",
+          registrationPoints,
+          registrationLandmarks
+        );
         registrationTPS = new TPS(registrationPoints, registrationLandmarks);
         displayPoints = [];
         for (var i = 0; i < mediapipe.vertices.length; i += 3) {
@@ -177,6 +246,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
 
   const fixImage = async () => {
     clearSVG();
+
     if (currentTPS) {
       currentTPS.getCanvas().remove();
       props.tpsConfig.destroy(currentTPS);
@@ -208,13 +278,41 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
       imageLandmarks.set(point.index, [point.x, point.y, 0]);
     }
 
+    const jsonOutput = { ...fixedPoints };
+    jsonOutput.points = jsonOutput.points.reduce((acc, point, i) => {
+      if (point) acc[i] = point;
+      return acc;
+    }, {});
+    console.log("fixedPoints", jsonOutput);
+
     // Create TPS using the provided configuration
     console.log("imageLandmarks", imageLandmarks, originalImageData);
-    currentTPS = props.tpsConfig.create(imageLandmarks, originalImageData);
+    currentTPS = props.tpsConfig.create(
+      imageLandmarks,
+      originalImageData,
+      blurMask,
+      presetConfig().imageBBox
+    );
     svgRef.after(currentTPS.getCanvas());
 
     setOriginalImageData(originalImageData);
   };
+
+  function dataUrlToMask(dataUrl: string) {
+    const img = new Image();
+    img.src = dataUrl;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, img.width, img.height);
+      const imageData = ctx?.getImageData(0, 0, img.width, img.height);
+      console.log("imageData", imageData);
+      blurMask = imageData?.data.filter((d, i) => i % 4 === 1);
+      console.log("blurMask", blurMask);
+    };
+  }
 
   const maxMeanX = Math.max(...meanFace.filter((d, i) => i % 3 === 0));
   const minMeanX = Math.min(...meanFace.filter((d, i) => i % 3 === 0));
@@ -240,14 +338,14 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
   instructionLine.style.strokeWidth = "3";
   let instructionStart = performance.now();
   const animateInstruction = () => {
-    console.log("animateInstruction", faceSvgRef);
+    // console.log("animateInstruction", faceSvgRef);
     if (!faceSvgRef) return;
     if (currentFeature >= 3) {
       faceSvgRef.innerHTML = "";
       return;
     }
     let feature = Object.keys(features)[currentFeature];
-    console.log(currentFeature, feature, Object.keys(features));
+    // console.log(currentFeature, feature, Object.keys(features));
     const p1 = scaleFaceLandmark(features[feature].path[0]);
     const p2 = scaleFaceLandmark(features[feature].path[1]);
     const t = (performance.now() - instructionStart) % (1000 * Math.PI);
@@ -349,7 +447,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
       const point = displayPoints[i];
       const pointElement = document.getElementById("point-" + i);
       if (pointElement) {
-        if (i in fixedPoints["points"]) {
+        if (fixedPoints["points"].filter((d) => d.index == i).length > 0) {
           pointElement.setAttribute("r", (2 / displayScale()).toString());
           pointElement.style.stroke = "blue";
           pointElement.style.fill = "blue";
@@ -385,6 +483,39 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
     e.stopPropagation();
   };
 
+  function loadImage(src: string) {
+    const img = new Image();
+    img.onload = () => {
+      // Update dimensions
+      const scale = calculateDisplayScale(img.width, img.height);
+      const newWidth = img.width * scale;
+      const newHeight = img.height * scale;
+      setDisplayScale(1);
+      setImageDimensions({ width: newWidth, height: newHeight });
+
+      // Resize canvas
+      if (canvasRef) {
+        canvasRef.width = newWidth;
+        canvasRef.height = newHeight;
+        ctx = canvasRef.getContext("2d");
+        ctx?.drawImage(img, 0, 0, newWidth, newHeight);
+      }
+
+      // Resize SVG
+      if (svgRef) {
+        svgRef.setAttribute("width", newWidth.toString());
+        svgRef.setAttribute("height", newHeight.toString());
+      }
+
+      originalImageData = ctx?.getImageData(0, 0, newWidth, newHeight);
+      setImageLoaded(true);
+      normalizedLandmarks = normalizeLandmarks(mediapipe.vertices);
+      fixFeature();
+      animateInstruction();
+    };
+    img.src = src;
+  }
+
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -400,40 +531,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // Update dimensions
-        const maxSize = 640;
-        const downsize = Math.min(1, maxSize / img.width, maxSize / img.height);
-        const newWidth = img.width * downsize;
-        const newHeight = img.height * downsize;
-        setImageDimensions({ width: newWidth, height: newHeight });
-
-        // Calculate display scale
-        const scale = calculateDisplayScale(newWidth, newHeight);
-        setDisplayScale(scale);
-
-        // Resize canvas
-        if (canvasRef) {
-          canvasRef.width = newWidth;
-          canvasRef.height = newHeight;
-          ctx = canvasRef.getContext("2d");
-          ctx?.drawImage(img, 0, 0, newWidth, newHeight);
-        }
-
-        // Resize SVG
-        if (svgRef) {
-          svgRef.setAttribute("width", newWidth.toString());
-          svgRef.setAttribute("height", newHeight.toString());
-        }
-
-        originalImageData = ctx?.getImageData(0, 0, newWidth, newHeight);
-        setImageLoaded(true);
-        normalizedLandmarks = normalizeLandmarks(mediapipe.vertices);
-        fixFeature();
-        animateInstruction();
-      };
-      img.src = event.target?.result as string;
+      loadImage(event.target.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -484,100 +582,12 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
       circle.remove();
       line.remove();
       path.remove();
+      svgRef.innerHTML = "";
+      document.getElementById("blurMask")?.remove();
     };
 
     svgRef.onmousedown = (e) => {
-      //     if (currentFeature == null) return;
-      //     const featureName = Object.keys(features)[currentFeature];
-      //     e.preventDefault();
-      //     e.stopPropagation();
-
-      //     const { x, y } = getSVGPoint(e);
-      //     isDrawing = true;
-      //     startPoint = { x, y };
-      //     fixedPoints[featureName] = [];
-      //     if (features[featureName].path.length == 1) {
-      //       circle.setAttribute("cx", x.toString());
-      //       circle.setAttribute("cy", y.toString());
-      //       svgRef.appendChild(circle);
-      //     } else if (features[featureName].path.length == 2) {
-      //       fixedPoints[featureName].push(startPoint);
-      //       line.setAttribute("x1", startPoint.x.toString());
-      //       line.setAttribute("y1", startPoint.y.toString());
-      //       line.setAttribute("x2", startPoint.x.toString());
-      //       line.setAttribute("y2", startPoint.y.toString());
-      //       svgRef.appendChild(line);
-      //     } else {
-      //       fixedPoints[featureName].push(startPoint);
-      //       path.setAttribute(
-      //         "d",
-      //         "M " +
-      //           fixedPoints[featureName].map((p, i) => `${p.x} ${p.y}`).join(" L ")
-      //       );
-      //       svgRef.appendChild(path);
-      //     }
-      //   };
-
-      //   svgRef.onmousemove = (e) => {
-      //     if (currentFeature == null) return;
-      //     const featureName = Object.keys(features)[currentFeature];
-      //     e.preventDefault();
-      //     e.stopPropagation();
-      //     if (isDrawing) {
-      //       const { x, y } = getSVGPoint(e);
-      //       if (features[featureName].path.length == 1) {
-      //         circle.setAttribute("cx", x.toString());
-      //         circle.setAttribute("cy", y.toString());
-      //       } else if (features[featureName].path.length == 2) {
-      //         line.setAttribute("x2", x.toString());
-      //         line.setAttribute("y2", y.toString());
-      //       } else {
-      //         fixedPoints[featureName].push({ x, y });
-      //         path.setAttribute(
-      //           "d",
-      //           "M " +
-      //             fixedPoints[featureName]
-      //               .map((p, i) => `${p.x} ${p.y}`)
-      //               .join(" L ")
-      //         );
-      //       }
-      //     }
-      //   };
-
-      //   svgRef.onmouseup = (e) => {
-      //     if (currentFeature == null) return;
-      //     const featureName = Object.keys(features)[currentFeature];
-      //     e.preventDefault();
-      //     e.stopPropagation();
-      //     isDrawing = false;
-      //     const { x, y } = getSVGPoint(e);
-      //     if (features[featureName].path.length == 1) {
-      //       fixedPoints[featureName].push(startPoint);
-      //     } else if (features[featureName].path.length == 2) {
-      //       fixedPoints[featureName].push({ x, y });
-      //     } else {
-      //       fixedPoints[featureName].push({ x, y });
-      //       fixedPoints[featureName].push({ x: startPoint.x, y: startPoint.y });
-      //       path.setAttribute(
-      //         "d",
-      //         "M " +
-      //           fixedPoints[featureName].map((p, i) => `${p.x} ${p.y}`).join(" L ")
-      //       );
-      //     }
-
-      //     if (props.onFeatureComplete) {
-      //       props.onFeatureComplete(featureName, fixedPoints[featureName]);
-      //     }
-
-      //     currentFeature++;
-      //     currentFeature = Math.min(currentFeature, Object.keys(features).length);
-      //     if (currentLayer == "basics" && currentFeature > 2) {
-      //       currentLayer = "silhouette";
-      //     }
-      //     fixFeature();
-      //     clearSVG();
-      //   };
-      // });
+      console.log("mousedown", currentFeature, activePoint, editingMode);
       if (currentFeature == null) return;
       if (activePoint || editingMode == "points") return;
       const featureName = Object.keys(features)[currentFeature];
@@ -692,7 +702,10 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
     };
   });
 
-  const [displayEmotionLevels, setDisplayEmotionLevels] = createSignal<EmotionLevels>(NoEmotion);
+  const [displayEmotionLevels, setDisplayEmotionLevels] =
+    createSignal<EmotionLevels>(NoEmotion);
+
+  loadPreset(Object.keys(presets)[0]);
 
   return (
     <div
@@ -720,41 +733,23 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
           "flex-direction": "column",
           "align-items": "center",
           "justify-content": "center",
-          transform: `scale(${displayScale()})`,
           "transform-origin": "center center",
           "flex-grow": 3,
           "flex-shrink": 0,
-          width: imageLoaded()
-            ? imageDimensions().width * displayScale() + "px"
-            : "auto",
-          height: imageLoaded()
-            ? imageDimensions().height * displayScale() + "px"
-            : "auto",
+          height: "480px",
         }}
       >
         <div
           style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            color: "#999",
-            "font-size": "16px",
-            "pointer-events": "none",
-            display: imageLoaded() ? "none" : "block",
+            overflow: "hidden",
+            width: imageLoaded()
+              ? imageDimensions().width * displayScale() + "px"
+              : "640px",
+            height: imageLoaded()
+              ? imageDimensions().height * displayScale() + "px"
+              : "480px",
             background: "white",
-            "z-index": 1000,
-          }}
-        >
-          Drop an image here
-        </div>
-        <canvas
-          id="source"
-          ref={canvasRef}
-          width={imageDimensions().width}
-          height={imageDimensions().height}
-          style={{
-            display: "block",
+            transform: `scale(${displayScale()})`,
             "box-shadow": imageLoaded()
               ? `${-0.5 / displayScale()}em ${
                   0.5 / displayScale()
@@ -763,53 +758,147 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
                 }em 0 gray`
               : "none",
           }}
-        ></canvas>
-        <div
-          id="overlays"
-          style={{
-            width: imageDimensions().width + "px",
-            height: imageDimensions().height + "px",
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            "z-index": 1000,
-          }}
         >
-          <svg
-            id="landmarks"
-            ref={svgRef}
-            xmlns="http://www.w3.org/2000/svg"
-            width={imageDimensions().width}
-            height={imageDimensions().height}
+          <div
             style={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              "pointer-events": imageLoaded() ? "auto" : "none",
-              "stroke-width": `${5 / displayScale()}px`,
-              stroke: "blue",
-              fill: "rgba(255,255,255,0.4)",
-              filter: "invert(1)",
+              color: "#999",
+              "font-size": "16px",
+              "pointer-events": "none",
+              display: imageLoaded() ? "none" : "block",
+              background: "white",
+              "z-index": 1000,
             }}
-          ></svg>
+          >
+            Drop an image here
+          </div>
+          <canvas
+            id="source"
+            ref={canvasRef}
+            width={imageDimensions().width}
+            height={imageDimensions().height}
+            style={{
+              display: imageLoaded() ? "block" : "none",
+            }}
+          ></canvas>
+          <div
+            id="overlays"
+            ref={overlaysRef}
+            style={{
+              width: imageDimensions().width + "px",
+              height: imageDimensions().height + "px",
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              "z-index": 1000,
+            }}
+          >
+            <svg
+              id="landmarks"
+              ref={svgRef}
+              xmlns="http://www.w3.org/2000/svg"
+              width={imageDimensions().width}
+              height={imageDimensions().height}
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                "pointer-events": imageLoaded() ? "auto" : "none",
+                "stroke-width": `${5 / displayScale()}px`,
+                stroke: "blue",
+                fill: "rgba(255,255,255,0.4)",
+                filter: "invert(1)",
+              }}
+            ></svg>
+          </div>
+        </div>
+        <div
+          id="presets"
+          ref={presetsRef}
+          style={{
+            position: "absolute",
+            bottom: "-150px",
+            height: "150px",
+            left: "50%",
+            transform: "translate(-50%, 0)",
+            display: "flex",
+            flex: "row",
+            gap: "10px",
+            "flex-wrap": "nowrap",
+            "justify-content": "center",
+            "align-items": "center",
+            "align-content": "center",
+            "flex-direction": "row",
+            width: "640px",
+            "overflow-x": "scroll",
+          }}
+        >
+          <For each={Object.keys(presets)}>
+            {(presetName) => (
+              <div
+                id={presetName}
+                style={{
+                  cursor: "pointer",
+                  border: "1px solid #000",
+                  padding: "3px",
+                  height: "80px",
+                  width: "40px",
+                  "flex-shrink": 0,
+                  "aspect-ratio": "1/1",
+                }}
+                onclick={() => {
+                  loadPreset(presetName);
+                }}
+              >
+                <img
+                  src={
+                    presets[presetName].image ??
+                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'%3E%3C/line%3E%3Cline x1='5' y1='12' x2='19' y2='12'%3E%3C/line%3E%3C/svg%3E"
+                  }
+                  style={{
+                    height: "80px",
+                    "aspect-ratio": "1/1",
+                    "object-fit": "cover",
+                    overflow: "hidden",
+                    background: "transparent",
+                  }}
+                />
+              </div>
+            )}
+          </For>
         </div>
       </div>
-
       <div
+        id="controls-wrapper"
         style={{
           display: "flex",
           "flex-direction": "column",
           "align-items": "center",
           "justify-content": "center",
           width: "300px",
+          "margin-right": "2em",
         }}
       >
         <h1>Pareidolia</h1>
         <div id="controls">
           <div style={{ position: "relative" }}>
-            <Face id="face" ref={faceRef} width={140} height={140} expressionModel={props.emotions ? new ExpressionModel(props.emotions.model) : undefined} emotionLevels={displayEmotionLevels}/>
+            <Face
+              id="face"
+              ref={faceRef}
+              width={140}
+              height={140}
+              expressionModel={
+                props.emotions
+                  ? new ExpressionModel(props.emotions.model)
+                  : undefined
+              }
+              emotionLevels={displayEmotionLevels}
+            />
             <svg
               id="face-svg"
               ref={faceSvgRef}
@@ -823,34 +912,77 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
               }}
             ></svg>
           </div>
-          <Show when={ props.emotions } >
+          <Show when={props.emotions}>
             <For each={Object.keys(NoEmotion)}>
-                    {(key) => 
-                        <div id="emotion-sliders" style={{display: "flex", "align-items": "center", gap: "10px"}}>
-                            <input type="range" min="-100" max="100" value={displayEmotionLevels()[key as keyof EmotionLevels]} oninput={(e) => {
-                                const currentEmotions = displayEmotionLevels();
-                                const newEmotions = {...currentEmotions, [key]: parseInt(e.target.value)};
-                                setDisplayEmotionLevels(newEmotions);
-                                props.emotions.callback(newEmotions);
-                            }}/>
-                            <span>{String(key)}</span>
-                        </div>
-                    }
-                </For>
-                <input type="button" value="Reset" onClick={() => {
-                    setDisplayEmotionLevels(NoEmotion);
-                    document.querySelectorAll("#emotion-sliders input[type='range']").forEach((input) => {
-                        (input as HTMLInputElement).value = "0";
-                    });
-                    props.emotions.callback(NoEmotion);
-                }} />
+              {(key) => (
+                <div
+                  id="emotion-sliders"
+                  style={{
+                    display: "flex",
+                    "align-items": "center",
+                    gap: "10px",
+                  }}
+                >
+                  <input
+                    type="range"
+                    min="-100"
+                    max="100"
+                    value={displayEmotionLevels()[key as keyof EmotionLevels]}
+                    oninput={(e) => {
+                      const currentEmotions = displayEmotionLevels();
+                      const newEmotions = {
+                        ...currentEmotions,
+                        [key]: parseInt(e.target.value),
+                      };
+                      setDisplayEmotionLevels(newEmotions);
+                      props.emotions.callback(newEmotions);
+                    }}
+                  />
+                  <span>{String(key)}</span>
+                </div>
+              )}
+            </For>
+            <input
+              type="button"
+              value="Reset"
+              onClick={() => {
+                setDisplayEmotionLevels(NoEmotion);
+                document
+                  .querySelectorAll("#emotion-sliders input[type='range']")
+                  .forEach((input) => {
+                    (input as HTMLInputElement).value = "0";
+                  });
+                props.emotions.callback(NoEmotion);
+              }}
+            />
           </Show>
           <h4>Layers</h4>
           <div id="layers">
             <input
               type="button"
               value="Mask"
-              onClick={() => setCurrentLayer("mask")}
+              onClick={() => {
+                setCurrentLayer("mask");
+                clearSVG();
+                if (presetConfig().blurMask) {
+                  const img = document.createElement("img");
+                  img.id = "blurMask";
+                  img.src = presetConfig().blurMask;
+                  img.style.position = "absolute";
+                  img.style.opacity = ".5";
+                  img.style.top = presetConfig().imageBBox.minY + "px";
+                  img.style.left = presetConfig().imageBBox.minX + "px";
+                  img.style.width =
+                    presetConfig().imageBBox.maxX -
+                    presetConfig().imageBBox.minX +
+                    "px";
+                  img.style.height =
+                    presetConfig().imageBBox.maxY -
+                    presetConfig().imageBBox.minY +
+                    "px";
+                  overlaysRef!.appendChild(img);
+                }
+              }}
             />
             {Object.keys(layers).map((layer) => {
               return (
@@ -859,6 +991,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
                   value={layer}
                   onClick={() => {
                     setCurrentLayer(layer);
+                    clearSVG();
                     drawLandmarks(true);
                   }}
                 />
@@ -867,7 +1000,12 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
             <input
               type="button"
               value="Basics"
-              onClick={() => setCurrentLayer("basics")}
+              onClick={() => {
+                setCurrentLayer("basics");
+                editingMode = "feature";
+                clearSVG();
+                drawLandmarks(true);
+              }}
             />
           </div>
           <h4>{featureName()}</h4>
@@ -909,6 +1047,10 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
             value="Do it!"
             onClick={() => {
               fixImage();
+              console.log({
+                image: canvasRef?.toDataURL(),
+                fixedPoints: fixedPoints,
+              });
             }}
           />
           <input
@@ -917,7 +1059,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
             onClick={(e) => {
               const button = e.target as HTMLInputElement;
               if (svgRef.children.length > 0) {
-                svgRef.innerHTML = "";
+                clearSVG();
                 button.value = "View Points";
               } else {
                 drawLandmarks();
@@ -929,6 +1071,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
           <br />
         </div>
       </div>
+      <br />
     </div>
   );
 };

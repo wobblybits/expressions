@@ -663,3 +663,42 @@ code {
 .rc-scout__link:active {
   color: #4e8b1d;
 }
+
+input[type="checkbox"] {
+  position: relative;
+  float: right;
+  display: block;
+  margin-right: 3em;
+  width: 1em;
+  height: 1em;
+  border: 1px solid black;
+  background: white;
+  padding: 1px;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:before {
+  position: absolute;
+  display: block;
+  border: 1px solid black;
+  top: -2px;
+  left: -2px;
+  width: calc(1em + 4px);
+  height: calc(1em + 4px);
+  content: " ";
+  background: #FFF;
+}
+
+input[type="checkbox"]:after {
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0;
+  width: 1em;
+  height: 1em;
+  content: "";
+}
+
+input[type="checkbox"]:checked:after {
+  background:black;
+}

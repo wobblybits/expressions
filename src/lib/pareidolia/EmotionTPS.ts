@@ -15,12 +15,12 @@ class EmotionTPS extends BaseTPS {
     baseEmotionLevels: EmotionLevels;
     skipLandmarks: number;
 
-    constructor(imageLandmarks: Map<number, number[]>, emotionLevels: EmotionLevels, emotionModel: EmotionModel, imageData: ImageData) {        
+    constructor(imageLandmarks: Map<number, number[]>, emotionLevels: EmotionLevels, emotionModel: EmotionModel, imageData: ImageData, blurMask: Uint8ClampedArray, imageBBox: BBox, processingScale: number = 1) {        
         const referenceLandmarks = [];
         for (let i = 0; i < meanFace.length; i+=3) {
             referenceLandmarks.push([meanFace[i], -meanFace[i+1], meanFace[i+2]]);
         }
-        super(imageLandmarks, referenceLandmarks, imageData, 1);
+        super(imageLandmarks, referenceLandmarks, imageData, blurMask, imageBBox, processingScale);
         
         this.emotionModel = emotionModel;
         this.skipLandmarks = 2;
@@ -68,10 +68,25 @@ class EmotionTPS extends BaseTPS {
         // For ImageTPS, this updates the emotion transformation
         const emotionPoints = [];
         const emotion = this.emotionModel.calculateCompositeEmotion(emotionLevels);
+        let minY = Infinity;
+        let maxY = -Infinity;
+        let minX = Infinity;
+        let maxX = -Infinity;
         for (var i=0; i < emotion.length; i+=3*this.skipLandmarks) {
             emotionPoints.push([emotion[i] + meanFace[i], -emotion[i+1] - meanFace[i+1]]);
+            minY = Math.min(minY, -emotion[i+1] - meanFace[i+1]);
+            maxY = Math.max(maxY, -emotion[i+1] - meanFace[i+1]);
+            minX = Math.min(minX, emotion[i] + meanFace[i]);
+            maxX = Math.max(maxX, emotion[i] + meanFace[i]);
         }
-        
+
+        let scaleY = (this.modelBBox.maxY - this.modelBBox.minY) / (maxY - minY);
+        let scaleX = (this.modelBBox.maxX - this.modelBBox.minX) / (maxX - minX);
+        emotionPoints.forEach(point => {
+            point[0] = (point[0] - (maxX + minX) / 2) * scaleX + (this.modelBBox.maxX + this.modelBBox.minX) / 2;
+            point[1] = (point[1] - (maxY + minY) / 2) * scaleY + (this.modelBBox.maxY + this.modelBBox.minY) / 2;
+        });
+
         const params = this.emotionTPS.updateInverseParameters(emotionPoints);
         // console.log("params", params);
         // this.emotionTPS = new TPS(this.allPoints, emotionPoints);

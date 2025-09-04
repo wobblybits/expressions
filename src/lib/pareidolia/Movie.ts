@@ -13,6 +13,10 @@ interface FaceLandmarks {
     private videoElement: HTMLVideoElement;
     private onLandmarksCallback?: (landmarks: number[][]) => void;
     private isInitialized = false;
+    private centerFace = true;
+    private stabilizeFaceX = true;
+    private stabilizeFaceY = true;
+    private stabilizeFaceZ = true;
     
     // Add smoothing state
     private smoothedLandmarks: number[][] | null = null;
@@ -74,10 +78,7 @@ interface FaceLandmarks {
     private regularizeLandmarks(landmarks: FaceLandmarks[], imageScale: number = 1): number[][] {
       // Calculate face center
       if (!landmarks) return [];
-
-
-      // return landmarks.map(l => [l.x*1000,-l.y*1000]);
-
+  
       const center = {
         x: landmarks.reduce((sum, l) => sum + l.x, 0) / landmarks.length,
         y: landmarks.reduce((sum, l) => sum + l.y, 0) / landmarks.length,
@@ -89,48 +90,109 @@ interface FaceLandmarks {
         y: l.y,
         z: l.z
       }));
-      // Translate to origin
-      const translated = transformed.map(l => ({
-        x: l.x - center.x,
-        y: l.y - center.y,
-        z: l.z - center.z
-      }));
   
-      transformed = translated;
-    
+      if (this.centerFace) {
+        // Translate to origin
+        const translated = transformed.map(l => ({
+          x: l.x - center.x,
+          y: l.y - center.y,
+          z: l.z - center.z
+        }));
   
-      // Calculate rotation to align face
-      // Use ear landmarks (left: 234, right: 454) to determine face orientation
-      const leftEar = transformed[234-1];
-      const rightEar = transformed[454-1];
-      
-      // Calculate face width vector
-      const faceWidth = {
-        x: rightEar.x - leftEar.x,
-        y: rightEar.y - leftEar.y,
-        z: rightEar.z - leftEar.z
-      };
-      
-      // Calculate rotation angle around Y axis to align width with X axis
-      const yawAngle = Math.atan2(faceWidth.z, faceWidth.x);
-      
-      // Apply Y rotation (around Y axis)
-      const rotatedY = transformed.map(l => {
-        const cosY = Math.cos(-yawAngle);
-        const sinY = Math.sin(-yawAngle);
-        return {
-          x: l.x * cosY - l.z * sinY,
-          y: l.y,
-          z: l.x * sinY + l.z * cosY
+        transformed = translated;
+      }
+  
+      // Apply rotations in the correct order: Yaw -> Pitch -> Roll
+  
+      if (this.stabilizeFaceY) {
+        // Use ear landmarks (left: 234, right: 454) to determine face orientation
+        const leftEar = transformed[234-1];
+        const rightEar = transformed[454-1];
+        
+        // Calculate face width vector
+        const faceWidth = {
+          x: rightEar.x - leftEar.x,
+          y: rightEar.y - leftEar.y,
+          z: rightEar.z - leftEar.z
         };
-      });
+        
+        // Calculate rotation angle around Y axis to align width with X axis
+        const yawAngle = Math.atan2(faceWidth.z, faceWidth.x);
+        
+        // Apply Y rotation (around Y axis)
+        const rotatedY = transformed.map(l => {
+          const cosY = Math.cos(-yawAngle);
+          const sinY = Math.sin(-yawAngle);
+          return {
+            x: l.x * cosY - l.z * sinY,
+            y: l.y,
+            z: l.x * sinY + l.z * cosY
+          };
+        });
   
-      transformed = rotatedY;
+        transformed = rotatedY;
+      }
+  
+      if (this.stabilizeFaceX) {
+        // Use nose bridge and chin to calculate pitch rotation
+        const noseBridge = transformed[168-1]; // Nose bridge
+        const chin = transformed[152-1]; // Chin
+        
+        const faceHeight = {
+          x: chin.x - noseBridge.x,
+          y: chin.y - noseBridge.y,
+          z: chin.z - noseBridge.z
+        };
+        
+        // Calculate rotation angle around X axis to align height with Y axis
+        const pitchAngle = Math.atan2(faceHeight.z, faceHeight.y);
+        
+        // Apply X rotation (around X axis)
+        const rotatedX = transformed.map(l => {
+          const cosX = Math.cos(-pitchAngle);
+          const sinX = Math.sin(-pitchAngle);
+          return {
+            x: l.x,
+            y: l.y * cosX - l.z * sinX,
+            z: l.y * sinX + l.z * cosX
+          };
+        });
+  
+        transformed = rotatedX;
+      }
+  
+      if (this.stabilizeFaceZ) {
+        // Use eye landmarks for roll detection (more reliable than ears)
+        const leftEye = transformed[33-1];   // Left eye corner
+        const rightEye = transformed[362-1]; // Right eye corner
+        
+        // Calculate eye line vector
+        const eyeLine = {
+          x: rightEye.x - leftEye.x,
+          y: rightEye.y - leftEye.y,
+          z: rightEye.z - leftEye.z
+        };
+        
+        // Calculate rotation angle around Z axis to align eye line with X axis
+        const rollAngle = Math.atan2(eyeLine.y, eyeLine.x);
+        
+        // Apply Z rotation (around Z axis) - this is the correct roll rotation
+        const rotatedZ = transformed.map(l => {
+          const cosZ = Math.cos(-rollAngle);
+          const sinZ = Math.sin(-rollAngle);
+          return {
+            x: l.x * cosZ - l.y * sinZ,
+            y: l.x * sinZ + l.y * cosZ,
+            z: l.z
+          };
+        });
+        transformed = rotatedZ;
+      }
   
       // Find y range for scaling
       const yCoords = transformed.map(l => l.y);
       const yRange = Math.max(...yCoords) - Math.min(...yCoords);
-      const scale = 20000 / yRange; // 
+      const scale = 20000 / yRange;
   
       // Scale all coordinates
       let result = transformed.map(l => [l.x * scale * imageScale, -l.y * scale * imageScale, l.z * scale * imageScale]);
@@ -160,6 +222,19 @@ interface FaceLandmarks {
   
       this.smoothedLandmarks = smoothed;
       return smoothed;
+    }
+    
+    setCenterFace(center: boolean): void {
+      this.centerFace = center;
+    }
+    setStabilizeFaceY(stabilize: boolean): void {
+      this.stabilizeFaceY = stabilize;
+    }
+    setStabilizeFaceX(stabilize: boolean): void {
+      this.stabilizeFaceX = stabilize;
+    }
+    setStabilizeFaceZ(stabilize: boolean): void {
+      this.stabilizeFaceZ = stabilize;
     }
   
     // Add method to adjust smoothing factor at runtime

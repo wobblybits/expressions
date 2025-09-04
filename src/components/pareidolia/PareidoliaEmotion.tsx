@@ -83,12 +83,15 @@ const Pareidolia: Component<{ emotionModel: EmotionModel }> = (props) => {
         render: (props) => (<></>),
       }}
       tpsConfig={{
-        create: (landmarks, imageData, displayScale) => {
+        create: (landmarks, imageData, blurMask, imageBBox) => {
           const tps = new EmotionTPS(
             landmarks,
             currentEmotionLevels(),
             new EmotionModel(),
-            imageData
+            imageData,
+            blurMask,
+            imageBBox,
+            1
           );
           setEmotionTPS(tps);
           return tps;

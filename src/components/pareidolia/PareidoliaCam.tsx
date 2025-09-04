@@ -21,7 +21,7 @@ const PareidoliaCam: Component<{}> = (props) => {
 
   const faceMeshCamera = new FaceMeshCamera(async (landmarks) => {
     // capture first frame and save as reference, don't draw
-    if (landmarks.length > 0 && !cameraLandmarks) {
+    if (landmarks.length > 0 && !cameraTPS()) {
       cameraLandmarks = landmarks;
       return;
     }
@@ -75,15 +75,42 @@ const PareidoliaCam: Component<{}> = (props) => {
                   faceMeshCamera.stop();
                 }}
               />
+              <br/>
+              Center Face
+              <input type="checkbox" value="Center Face" onClick={(e) => {
+                faceMeshCamera.setCenterFace((e.target as HTMLInputElement).checked);
+              }} checked/>
+              <br/>
+              Stabilize Face Y
+              <input type="checkbox" onClick={(e) => {
+                faceMeshCamera.setStabilizeFaceY((e.target as HTMLInputElement).checked);
+              }} checked/>
+              <br/>
+              Stabilize Face X
+              <input type="checkbox" onClick={(e) => {
+                faceMeshCamera.setStabilizeFaceX((e.target as HTMLInputElement).checked);
+              }} checked/>
+              <br/>
+              Stabilize Face Z
+              <input type="checkbox" onClick={(e) => {
+                faceMeshCamera.setStabilizeFaceZ((e.target as HTMLInputElement).checked);
+              }} checked/>
+              <br/>
+              Smoothing —&nbsp;
+              <input type="range" onInput={(e) => {
+                faceMeshCamera.setSmoothingFactor(parseFloat((e.target as HTMLInputElement).value));
+              }} min="0" max="1" step="0.01" value="0.7"/>
             </>
         ),
       }}
       tpsConfig={{
-        create: (landmarks, imageData) => {
+        create: (landmarks, imageData, blurMask, imageBBox) => {
           const tps = new CameraTPS(
             landmarks,
             cameraLandmarks,
             imageData,
+            blurMask,
+            imageBBox,
             PROCESSING_SCALE
           );
           setCameraTPS(tps);

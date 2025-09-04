@@ -1,6 +1,7 @@
 import { BaseTPS, type TPSTransformationPoints } from '../pareidolia/ImageTPS';
 import TPS from '../tps/TPS';
-import { getBBox } from './utils';
+import { getBBox, type BBox } from './utils';
+
 
 class CameraTPS extends BaseTPS {
     cameraLandmarks: number[][];
@@ -10,13 +11,13 @@ class CameraTPS extends BaseTPS {
     inverseMap: number[][];
     allPoints: number[][];
 
-    constructor(imageLandmarks: Map<number, number[]>, cameraLandmarks: number[][], imageData: ImageData, processingScale: number = 2) {
+    constructor(imageLandmarks: Map<number, number[]>, cameraLandmarks: number[][], imageData: ImageData, blurMask: Uint8ClampedArray, imageBBox: BBox, processingScale: number = 2) {
         console.log("imageData", imageData);
-        super(imageLandmarks, cameraLandmarks, imageData, processingScale);
+        super(imageLandmarks, cameraLandmarks, imageData, blurMask, imageBBox, processingScale);
         
         // Store camera-specific data AFTER calling super
         this.cameraLandmarks = cameraLandmarks;
-        this.landmarkSkip = 2;
+        this.landmarkSkip = 4;
         this.cameraPoints = [];
         
         // Build camera points from landmarks
