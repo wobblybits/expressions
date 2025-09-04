@@ -474,7 +474,7 @@ main p a {
 
 .explainer {
   flex-grow: 1;
-  max-height: 80vh;
+  /* max-height: 80vh; */
   overflow-y: auto;
   background: white;
   padding: 1em 1em 0;
@@ -508,7 +508,7 @@ main p a {
   margin-bottom: 1em;
 }
 
-.explainer img {
+.synth-images img {
   border: 1px solid var(--border-color);
   margin: 1em auto;
 }
