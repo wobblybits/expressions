@@ -51,6 +51,13 @@ const About: Component = () => {
           <p>An extension of the pareidolia experiment that is untethered from the emotional expression model. Instead it uses facemesh displacement data directly from a user's webcam. The thin-plate spline calculations were optimized to run in real-time using a GPU.</p>
           </div>
         </div>
+        <div class='card'>
+          <h2><a href="./detect">Emotion Detection</a></h2>
+          <div class='content flex flex-col gap-0'>
+          <div class="image"><img src="./preview/peach.gif" alt="Pareidolia Webcam Filter" /></div>
+          <p>An extension of the pareidolia experiment that is untethered from the emotional expression model. Instead it uses facemesh displacement data directly from a user's webcam. The thin-plate spline calculations were optimized to run in real-time using a GPU.</p>
+          </div>
+        </div>
         {/* <div class='card'>
           <h2><a href="./movie">Pareidolia Movie</a></h2>
           <div class='content flex flex-col gap-0'>

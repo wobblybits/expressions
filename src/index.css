@@ -454,6 +454,7 @@ h1 {
   width: auto !important;
   height: auto !important;
   margin-top: -3px !important;
+  cursor: pointer;
 }
 
 #composite-grid .grid-face-wrapper:hover {

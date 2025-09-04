@@ -192,7 +192,7 @@ const CompositePage: Component = () => {
                               // 'aspect-ratio': '1 / 1',
                               position: "relative",
                             }}
-                            onMouseEnter={() => {
+                            onClick={() => {
                               labelRef.innerHTML = embedding.getClosestWord({
                                 [row]: rowEmotions[row][0](),
                                 [column]: columnEmotions[column][0](),

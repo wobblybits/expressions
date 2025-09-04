@@ -31,7 +31,7 @@ const App: Component = () => {
       <Route path="/pareidolia" component={PareidoliaRoute} />
       <Route path="/transference" component={TransferenceRoute} />
       <Route path="/synth" component={SynthRoute} />
-      <Route path="/movie" component={MovieRoute} />
+      {/* <Route path="/movie" component={MovieRoute} /> */}
     </Router>
   );
 };

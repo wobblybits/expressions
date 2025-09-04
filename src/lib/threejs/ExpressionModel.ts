@@ -54,36 +54,10 @@ class ExpressionModel {
             this.pupils.push(pupil);
         }
     }
-    getExpression(expression: EmotionLevels | number[]) {
-        if (!this.canonicalFace) {
-            return undefined;
-        }
+    createExpression(coordinates: number[]) {
         const group = new THREE.Group();
-        const coordinates = this.emotionModel.calculateCompositeEmotion(expression);
-
-        if (!coordinates) {
-            // Return a group with the face mesh instead of just the geometry
-            group.add(this.faceMesh);
-            group.position.set(0, 0, 0);
-            group.scale.set(1, -1, -1);
-            group.rotation.set(0, 0, 0);
-            return group;
-        }
 
         const positionAttribute = this.faceMesh.geometry.getAttribute('position');
-
-        let maxY = 0;
-        let minY = 0;
-        for (let i = 0; i < coordinates.length; i++) {
-            coordinates[i] += this.vertices[i];
-            if (i % 3 == 1) {
-                maxY = Math.max(maxY, coordinates[i]);
-                minY = Math.min(minY, coordinates[i]);
-            }
-        }
-        for (let i = 0; i < coordinates.length; i++) {
-            coordinates[i] /= .25 *(maxY - minY);
-        }
 
         this.faceMesh.geometry.setAttribute('position',  new THREE.Float32BufferAttribute(coordinates,3));
 
@@ -100,6 +74,36 @@ class ExpressionModel {
         group.scale.set(1, -1, -1);
         group.rotation.set(0, 0, 0);
         return group;
+    }
+
+    getExpression(expression: EmotionLevels | number[]) {
+        if (!this.canonicalFace) {
+            return undefined;
+        }
+
+        const coordinates = this.emotionModel.calculateCompositeEmotion(expression);
+        const group = new THREE.Group();
+        if (!coordinates) {
+            // Return a group with the face mesh instead of just the geometry
+            group.add(this.faceMesh);
+            group.position.set(0, 0, 0);
+            group.scale.set(1, -1, -1);
+            group.rotation.set(0, 0, 0);
+            return group;
+        }  
+        let maxY = 0;
+        let minY = 0;
+        for (let i = 0; i < coordinates.length; i++) {
+            coordinates[i] += this.vertices[i];
+            if (i % 3 == 1) {
+                maxY = Math.max(maxY, coordinates[i]);
+                minY = Math.min(minY, coordinates[i]);
+            }
+        }
+        for (let i = 0; i < coordinates.length; i++) {
+            coordinates[i] /= .25 *(maxY - minY);
+        }
+        return this.createExpression(coordinates);
     }
 }
 
