@@ -59,38 +59,26 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
   });
   const [displayScale, setDisplayScale] = createSignal(1);
   const [featureName, setFeatureName] = createSignal("Upload an Image");
-  const [presetConfig, setPresetConfig] = createSignal(
-    Object.values(presets)[0]
-  );
+  const [presetConfig, setPresetConfig] = createSignal(null);
   let presetsRef: HTMLDivElement | undefined;
 
   let blurMask: Uint8ClampedArray | undefined;
-  dataUrlToMask(presetConfig().blurMask);
 
-  let fixedPoints: any = { points: [], ...presetConfig().fixedPoints };
-  if (presetConfig().fixedPoints) {
-    fixedPoints.points = Object.values(
-      presetConfig().fixedPoints.points
-    ).reduce((acc, point: any, i) => {
-      acc[point.index] = point;
-      return acc;
-    }, []);
-  }
-  if (presetConfig().image) {
-    loadImage(presetConfig().image);
-  }
-  let currentFeature = presetConfig().currentFeature || 0;
+  let currentFeature = 0;
   let originalImageData: ImageData | undefined;
   let currentTPS: any = null;
+  let fixedPoints: any = { points: [] };
 
-  let editingMode = presetConfig().currentFeature >= 3 ? "points" : "feature";
+  let editingMode = "feature";
   console.log("editingMode", editingMode);
-  const [currentLayer, setCurrentLayer] = createSignal(
-    presetConfig().currentFeature >= 3 ? "silhouette" : "basics"
-  );
+  const [currentLayer, setCurrentLayer] = createSignal("basics");
 
   function loadPreset(presetName: string) {
+    if (!presetName) return;
     setPresetConfig(presets[presetName]);
+    if (presetConfig().image) {
+      loadImage(presetConfig().image);
+    }
     if (currentTPS) {
       currentTPS.getCanvas().remove();
       props.tpsConfig.destroy(currentTPS);
@@ -291,7 +279,7 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
       imageLandmarks,
       originalImageData,
       blurMask,
-      presetConfig().imageBBox
+      presetConfig() ? presetConfig().imageBBox : null
     );
     svgRef.after(currentTPS.getCanvas());
 
@@ -705,7 +693,9 @@ const PareidoliaCore: Component<PareidoliaCoreProps> = (props) => {
   const [displayEmotionLevels, setDisplayEmotionLevels] =
     createSignal<EmotionLevels>(NoEmotion);
 
-  loadPreset(Object.keys(presets)[0]);
+  if (Object.keys(presets).length > 0) {
+    loadPreset(Object.keys(presets)[0]);
+  }
 
   return (
     <div

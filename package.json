@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "DEPLOYMENT_TARGET=development vinxi dev",
     "build": "DEPLOYMENT_TARGET=production vinxi build",
-    "local": "rm -rf .vinxi .output node_modules/.vite node_modules/.cache && DEPLOYMENT_TARGET=local vinxi build",
+    "local": "rm -rf .vinxi .output node_modules/.vite node_modules/.cache && NODE_OPTIONS='--max-old-space-size=8192' DEPLOYMENT_TARGET=local vinxi build",
     "start": "npx serve .output/public"
   },
   "license": "MIT",
