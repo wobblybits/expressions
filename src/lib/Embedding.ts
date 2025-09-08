@@ -1,4 +1,4 @@
-import embeddings from '../data/embeddings.json';
+// import embeddings from '../data/embeddings.json';
 import { labels, data } from '../data/projections.json';
 import {Emotion, EmotionLevels, NoEmotion} from './EmotionModel';
 
@@ -17,7 +17,7 @@ export class Embedding {
     nounBasis: { [key in Emotion]: string }
 
     constructor() {
-        this.embeddings = embeddings;
+        // this.embeddings = embeddings;
         this.projections = data;
         this.labels = labels as Emotion[];
         this.embeddingDims = this.embeddings[Object.keys(this.embeddings)[0]].length;
