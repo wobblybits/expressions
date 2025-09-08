@@ -11,22 +11,21 @@
       "__commonjsHelpers-Cpj98o6Y.js"
     ]
   },
-  "_client-BDYXt1js.js": {
-    "file": "assets/client-BDYXt1js.js",
+  "_client-B6tb2hTU.css": {
+    "file": "assets/client-B6tb2hTU.css",
+    "src": "_client-B6tb2hTU.css"
+  },
+  "_client-Cule_RNT.js": {
+    "file": "assets/client-Cule_RNT.js",
     "name": "client",
     "dynamicImports": [
       "_face_mesh-C4n09Vz3.js",
       "_camera_utils-c8ZgCaOI.js",
-      "src/pages/GamePage.tsx",
-      "_face_mesh-C4n09Vz3.js"
+      "src/pages/GamePage.tsx"
     ],
     "css": [
-      "assets/client-BHHVlyAP.css"
+      "assets/client-B6tb2hTU.css"
     ]
-  },
-  "_client-BHHVlyAP.css": {
-    "file": "assets/client-BHHVlyAP.css",
-    "src": "_client-BHHVlyAP.css"
   },
   "_face_mesh-C4n09Vz3.js": {
     "file": "assets/face_mesh-C4n09Vz3.js",
@@ -37,21 +36,21 @@
     ]
   },
   "src/pages/GamePage.tsx": {
-    "file": "assets/GamePage-CzQjUF0n.js",
+    "file": "assets/GamePage-DBNpckyx.js",
     "name": "GamePage",
     "src": "src/pages/GamePage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_client-BDYXt1js.js"
+      "_client-Cule_RNT.js"
     ]
   },
   "virtual:$vinxi/handler/client": {
-    "file": "assets/client-CpAGQoUR.js",
+    "file": "assets/client-D6puOywY.js",
     "name": "client",
     "src": "virtual:$vinxi/handler/client",
     "isEntry": true,
     "imports": [
-      "_client-BDYXt1js.js"
+      "_client-Cule_RNT.js"
     ]
   }
 }
